@@ -5,6 +5,8 @@ package client;
 
 import java.io.*;
 import java.net.*;
+import util.Callback;
+
 /**
  * @author jame0019
  *
@@ -33,14 +35,21 @@ public class Client {
 		      socket = new DatagramSocket();
 
 //		      byte[] m = args[0].getBytes();
-		      byte[] m = new String("abcdef").getBytes();
+//		      byte[] m = new String("abcdef").getBytes();
+		      
+		      Callback callback = new Callback();
+		      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		      ObjectOutputStream oos = new ObjectOutputStream(baos);
+		      oos.writeObject(callback);
+		      byte[] m = baos.toByteArray();
+		      
 		      DatagramPacket request = new DatagramPacket(m, m.length, address, port);
 		      socket.send(request);
 
 		      byte[] buffer = new byte[1000];
 		      DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-		      socket.receive(reply);
-		      System.out.println("Reply: " + new String(reply.getData()));
+//		      socket.receive(reply);
+//		      System.out.println("Reply: " + new String(reply.getData()));
 		      
 		    } catch (SocketTimeoutException ex) {
 		      System.out.println("Timeout error: " + ex.getMessage());
