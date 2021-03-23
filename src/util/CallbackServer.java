@@ -16,6 +16,6 @@ public interface CallbackServer extends Remote{
 	 * 
 	 */
 	public void getBooking() throws RemoteException;
-	public void addCallback(Callback callback) throws RemoteException;
-	public void removeCallback(Callback callback) throws RemoteException;
+	public void addCallback(MonitorCallback callback) throws RemoteException;
+	public void removeCallback(MonitorCallback callback) throws RemoteException;
 }

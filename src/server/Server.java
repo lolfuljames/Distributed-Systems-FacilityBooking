@@ -17,14 +17,14 @@ public class Server implements CallbackServer{
 	 * 
 	 */
 	  private DatagramSocket socket;
-	  private List<Callback> callbacks = new ArrayList<>();
+	  private List<MonitorCallback> callbacks = new ArrayList<>();
 
 	  public Server(int port) throws SocketException {
 	    System.out.println("Initialising the socket for server..." + port);
 	    socket = new DatagramSocket(port);
 	  }
 	  
-	  private void service() throws IOException, ClassNotFoundException {
+	  private void service() throws IOException, ClassNotFoundException, RemoteException {
 		    System.out.println("Servicing the requests...");
 		    while (true) {
 		      byte[] buffer = new byte[1000];
@@ -33,13 +33,13 @@ public class Server implements CallbackServer{
 		      
 	          ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
 	          ObjectInputStream oos = new ObjectInputStream(baos);
-	          Callback test_callback = (Callback)oos.readObject();
+	          MonitorCallback test_callback = (MonitorCallback)oos.readObject();
 	          
 		      addCallback(test_callback);
 		      notifyRegistered("Received with thanks");
 		      // Do whatever is required here, process data etc
 //		      System.out.println("Received: " + new String(request.getData()));
-
+		      updateMonitorInterval();
 		      // get client ip address and port
 		      InetAddress clientAddr = request.getAddress();
 		      int clientPort = request.getPort();
@@ -54,7 +54,7 @@ public class Server implements CallbackServer{
 	 * @param args
 	 */
 	  public static void main(String[] args){
-		    int port = 12345;
+		    int port = 2222;
 
 		    try {
 		      Server server = new Server(port);
@@ -69,22 +69,34 @@ public class Server implements CallbackServer{
 	  }
 	  
 	  public void getBooking() {}
-	  public void addCallback(Callback callback) {
+	  public void addCallback(MonitorCallback callback) {
 		  callbacks.add(callback);
 	  }
-	  public void removeCallback(Callback callback) {
+	  public void removeCallback(MonitorCallback callback) {
 		  callbacks.remove(callback);
 	  }
 	  
-	  private void notifyRegistered(String message) {
+	  private void notifyRegistered(String message) throws RemoteException {
 		  callbacks.forEach(callback -> {
 			  try {
 				  callback.notify(message);
 			  }
 			  catch (RemoteException re) {
-				  System.out.print("RemoteException occured!");
+				  re.printStackTrace();
 			  }
 		  });
+	  }
+	  
+	  private void updateMonitorInterval() {
+		  List<MonitorCallback> expiredCallbacks = new ArrayList<>();
+		  callbacks.forEach(callback -> {
+			  callback.setMonitorInterval(callback.getMonitorInterval()-1);
+			  if (callback.getMonitorInterval() == 0) {
+				  expiredCallbacks.add(callback);
+			  }
+		  });
+		  expiredCallbacks.forEach(callback -> callbacks.remove(callback))
+		  ;
 	  }
 
 }

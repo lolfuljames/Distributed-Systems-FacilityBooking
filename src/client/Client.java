@@ -5,7 +5,7 @@ package client;
 
 import java.io.*;
 import java.net.*;
-import util.Callback;
+import util.MonitorCallback;
 
 /**
  * @author jame0019
@@ -28,7 +28,7 @@ public class Client {
 		// TODO Auto-generated method stub
 		String hostname = "localhost";
 	    DatagramSocket socket = null;
-	    int port = 12345;
+	    int port = 2222;
 		 try {
 		      InetAddress address = InetAddress.getByName(hostname);
 		      System.out.println("Address: " + address.getHostAddress());
@@ -37,7 +37,7 @@ public class Client {
 //		      byte[] m = args[0].getBytes();
 //		      byte[] m = new String("abcdef").getBytes();
 		      
-		      Callback callback = new Callback();
+		      MonitorCallback callback = new MonitorCallback(4, 7, 2);
 		      ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		      ObjectOutputStream oos = new ObjectOutputStream(baos);
 		      oos.writeObject(callback);
