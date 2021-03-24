@@ -5,8 +5,8 @@ package client;
 
 import java.io.*;
 import java.net.*;
-import java.util.Scanner;
-import util.MonitorCallback;
+import java.util.*;
+import util.*;
 
 /**
  * @author jame0019
@@ -39,7 +39,7 @@ public class Client {
 	      System.out.println("Address: " + serverAddress.getHostAddress());
 	      socket = new DatagramSocket();
 	      while (true) {
-	    	  sendCallback();
+	    	  monitorFacility();
 	      }
 //	      byte[] m = args[0].getBytes();
 //	      byte[] m = new String("abcdef").getBytes();
@@ -48,37 +48,63 @@ public class Client {
 //	      System.out.println("Reply: " + new String(reply.getData()));
 	}
 
-	public void sendCallback() throws IOException {
-		  console("What facility type would you like to be notified of? (Enter 0 to exit)");
-		  int facilityType = scanner.nextInt(); scanner.nextLine();
-		  if (facilityType == 0) {
-			  return;
-		  }
-		  console("Which facility would you like to be notified of? (Enter 0 to exit)");
-		  int facilityNumber = scanner.nextInt(); scanner.nextLine();
-		  if (facilityNumber == 0) {
-			  return;
-		  }
-		  console("Please enter duration of subscription. (Enter 0 to exit)");
-		  int monitorInterval = scanner.nextInt(); scanner.nextLine();
-		  if (monitorInterval == 0) {
-			  return;
-		  }
-		  
-	      MonitorCallback callback = new MonitorCallback(facilityType, facilityNumber, monitorInterval);
-	      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	      ObjectOutputStream oos = new ObjectOutputStream(baos);
-	      oos.writeObject(callback);
-	      byte[] m = baos.toByteArray();
-	      
-	      DatagramPacket request = new DatagramPacket(m, m.length, serverAddress, serverPort);
-	      socket.send(request);
+	private void monitorFacility() throws IOException {
+		console("What facility type would you like to be notified of? (Enter 0 to exit)");
+		int facilityType = scanner.nextInt(); scanner.nextLine();
+		if (facilityType == 0) {
+			return;
+		}
+		console("Which facility would you like to be notified of? (Enter 0 to exit)");
+		int facilityNumber = scanner.nextInt(); scanner.nextLine();
+		if (facilityNumber == 0) {
+			return;
+		}
+		console("Please enter duration of subscription. (Enter 0 to exit)");
+		int monitorInterval = scanner.nextInt(); scanner.nextLine();
+		if (monitorInterval == 0) {
+			return;
+		}
+		
+		MonitorCallback callback = new MonitorCallback(facilityType, facilityNumber, monitorInterval);
+		sendCallback(callback);  
+	}
 
-	      byte[] buffer = new byte[1000];
-	      DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-	      
-	      socket.receive(reply);
-	      System.out.println("Reply: " + new String(reply.getData()));
+	public void sendCallback(MonitorCallback callback) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		oos.writeObject(callback);
+		byte[] m = baos.toByteArray();
+		 
+		DatagramPacket request = new DatagramPacket(m, m.length, serverAddress, serverPort);
+		socket.send(request);
+		
+		byte[] buffer = new byte[1000];
+		DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+		socket.receive(reply);
+		socket.setSoTimeout(1000);
+
+//		check for acknowledgment on callback
+		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
+			socket.send(request);
+			buffer = new byte[1000];
+			reply = new DatagramPacket(buffer, buffer.length);
+			socket.receive(reply);
+		}
+		
+//		7 days timeout
+		buffer = new byte[1000];
+		reply = new DatagramPacket(buffer, buffer.length);
+		socket.receive(reply);
+		socket.setSoTimeout(7 * 24 * 60 * 1000);
+		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
+			System.out.println("Reply: " + new String(reply.getData()));
+			buffer = new byte[1000];
+			reply = new DatagramPacket(buffer, buffer.length);
+			socket.receive(reply);
+		}
+		
+		System.out.println("End of process...");
+		return;
 	}
 	
 	public void console(String message) {

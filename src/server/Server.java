@@ -7,12 +7,12 @@ import java.util.*;
 import java.io.*;
 import util.*;
 import java.rmi.RemoteException;
+
 /**
  * @author jame0019
  *
  */
 public class Server implements CallbackServer{
-
 	/**
 	 * 
 	 */
@@ -38,7 +38,7 @@ public class Server implements CallbackServer{
 		      System.out.println("Received");
 
 		      handleCallback(request);
-		      while (callbacks.size() > 1) {
+		      while (callbacks.size() > 0) {
 			      updateMonitorInterval();
 			      notifyAllCallbacks("Received with thanks");
 		      }
@@ -83,10 +83,16 @@ public class Server implements CallbackServer{
 	  }
 	  
 	  public void getBooking() {}
-	  public void addCallback(MonitorCallback callback) {
+	  public void addCallback(MonitorCallback callback) throws IOException {
+		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
+		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+		  socket.send(reply);
 		  callbacks.add(callback);
 	  }
-	  public void removeCallback(MonitorCallback callback) {
+	  public void removeCallback(MonitorCallback callback) throws IOException {
+		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
+		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+		  socket.send(reply);
 		  callbacks.remove(callback);
 	  }
 	  
@@ -119,8 +125,15 @@ public class Server implements CallbackServer{
 				  expiredCallbacks.add(callback);
 			  }
 		  });
-		  expiredCallbacks.forEach(callback -> callbacks.remove(callback))
-		  ;
+		  expiredCallbacks.forEach(callback -> {
+			  try {
+				  removeCallback(callback);
+			  }
+			  catch (IOException re) {
+				  throw new RuntimeException(re);
+			  }
+		  });
 	  }
+	  
 
 }
