@@ -36,19 +36,12 @@ public class Server implements CallbackServer{
 		      int clientPort = request.getPort();
 		      
 		      System.out.println("Received");
-		      // parse inputstream 
-	          ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
-	          ObjectInputStream oos = new ObjectInputStream(baos);
-	          MonitorCallback newCallback = (MonitorCallback) oos.readObject();
-	          newCallback.setAddress(clientAddr);
-	          newCallback.setPort(clientPort);
-		      addCallback(newCallback);
-		      
+
+		      handleCallback(request);
 		      while (callbacks.size() > 1) {
 			      updateMonitorInterval();
-			      notifyRegistered("Received with thanks");
+			      notifyAllCallbacks("Received with thanks");
 		      }
-		    
 		      // Do whatever is required here, process data etc
 //		      System.out.println("Received: " + new String(request.getData()));
 		      System.out.println("Waiting for new requests");
@@ -75,6 +68,19 @@ public class Server implements CallbackServer{
 		    	System.out.println("Class not found error: " + ex.getMessage());
 		    }
 	  }
+	  public void handleCallback(DatagramPacket request) throws IOException, ClassNotFoundException {
+	      // parse inputstream
+		  byte[] data = request.getData();
+		  InetAddress clientAddr = request.getAddress();
+		  int clientPort = request.getPort();
+		  
+          ByteArrayInputStream baos = new ByteArrayInputStream(request.getData());
+          ObjectInputStream oos = new ObjectInputStream(baos);
+          MonitorCallback newCallback = (MonitorCallback) oos.readObject();
+          newCallback.setAddress(clientAddr);
+          newCallback.setPort(clientPort);
+	      addCallback(newCallback);
+	  }
 	  
 	  public void getBooking() {}
 	  public void addCallback(MonitorCallback callback) {
@@ -84,14 +90,14 @@ public class Server implements CallbackServer{
 		  callbacks.remove(callback);
 	  }
 	  
-	  public void notifyCallback(MonitorCallback callback, String message) throws IOException {
-			message = message + "\n" + "timeleft: " + callback.getMonitorInterval();
+	  private void notifyCallback(MonitorCallback callback, String message) throws IOException {
+			message = message + "\n" + "facility: " + callback.getMonitorFacilityType() + " timeleft: " + callback.getMonitorInterval();
 		  	byte[] buffer = message.getBytes();
 			DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
 			socket.send(reply);
 		};
 	
-	  private void notifyRegistered(String message) throws RemoteException {
+	  private void notifyAllCallbacks(String message) throws RemoteException {
 		  callbacks.forEach(callback -> {
 			  try {
 				  notifyCallback(callback, message);
