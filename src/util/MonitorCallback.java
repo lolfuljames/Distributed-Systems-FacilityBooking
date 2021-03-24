@@ -3,6 +3,7 @@
  */
 package util;
 
+import java.net.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.io.Serializable;
@@ -16,6 +17,8 @@ public class MonitorCallback implements Remote, Serializable{
 	private int monitorFacilityType;
 	private int monitorFacilityNumber;
 	private int monitorInterval;
+	private InetAddress address;
+	private int port;
 	/**
 	 * @return 
 	 * 
@@ -26,12 +29,6 @@ public class MonitorCallback implements Remote, Serializable{
 		this.monitorFacilityNumber = monitorFacilityNumber;
 		this.monitorInterval = monitorInterval;
 	}
-	
-	public void notify(String message) throws RemoteException {
-		System.out.println("Hello callback called: " + message);
-		System.out.println("Monitored Facility: " + this.monitorFacilityType + '-' + this.monitorFacilityNumber);
-		System.out.println("Remaining days: " + this.monitorInterval);
-	};
 	
 	public int getMonitorFacilityType() {
 		return monitorFacilityType;
@@ -47,6 +44,22 @@ public class MonitorCallback implements Remote, Serializable{
 
 	public void setMonitorInterval(int monitorInterval) {
 		this.monitorInterval = monitorInterval;
+	}
+
+	public InetAddress getAddress() {
+		return address;
+	}
+
+	public void setAddress(InetAddress address) {
+		this.address = address;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	public static final long serialVersionUID = 42L;

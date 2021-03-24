@@ -30,20 +30,28 @@ public class Server implements CallbackServer{
 		      byte[] buffer = new byte[1000];
 		      DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 		      socket.receive(request);
-		      
-	          ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
-	          ObjectInputStream oos = new ObjectInputStream(baos);
-	          MonitorCallback test_callback = (MonitorCallback)oos.readObject();
-	          
-		      addCallback(test_callback);
-		      notifyRegistered("Received with thanks");
-		      // Do whatever is required here, process data etc
-//		      System.out.println("Received: " + new String(request.getData()));
-		      updateMonitorInterval();
+
 		      // get client ip address and port
 		      InetAddress clientAddr = request.getAddress();
 		      int clientPort = request.getPort();
-
+		      
+		      System.out.println("Received");
+		      // parse inputstream 
+	          ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
+	          ObjectInputStream oos = new ObjectInputStream(baos);
+	          MonitorCallback newCallback = (MonitorCallback) oos.readObject();
+	          newCallback.setAddress(clientAddr);
+	          newCallback.setPort(clientPort);
+		      addCallback(newCallback);
+		      
+		      while (callbacks.size() > 1) {
+			      updateMonitorInterval();
+			      notifyRegistered("Received with thanks");
+		      }
+		    
+		      // Do whatever is required here, process data etc
+//		      System.out.println("Received: " + new String(request.getData()));
+		      System.out.println("Waiting for new requests");
 		      // prepare the datagram packet to response
 		      DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 //		      socket.send(response);
@@ -76,14 +84,24 @@ public class Server implements CallbackServer{
 		  callbacks.remove(callback);
 	  }
 	  
+	  public void notifyCallback(MonitorCallback callback, String message) throws IOException {
+			message = message + "\n" + "timeleft: " + callback.getMonitorInterval();
+		  	byte[] buffer = message.getBytes();
+			DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+			socket.send(reply);
+		};
+	
 	  private void notifyRegistered(String message) throws RemoteException {
 		  callbacks.forEach(callback -> {
 			  try {
-				  callback.notify(message);
+				  notifyCallback(callback, message);
 			  }
 			  catch (RemoteException re) {
 				  re.printStackTrace();
-			  }
+			  } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		  });
 	  }
 	  
