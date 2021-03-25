@@ -26,7 +26,7 @@ public class Client {
 		// TODO Auto-generated method stub
 		String hostname = "localhost";
 	    DatagramSocket socket = null;
-	    int port = 12351;
+	    int port = 12359;
 		 try {
 		      InetAddress address = InetAddress.getByName(hostname);
 		      System.out.println("Address: " + address.getHostAddress());

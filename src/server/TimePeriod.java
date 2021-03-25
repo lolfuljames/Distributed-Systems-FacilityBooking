@@ -24,10 +24,17 @@ public class TimePeriod {
 	public Time getStartTime() {
 		return this.startTime;
 	}
-	
 
 	public Time getEndTime() {
 		return this.endTime;
+	}
+	
+	public void setStartTime(Time startTime) {
+		this.startTime = startTime;
+	}
+	
+	public void setEndTime(Time endTime) {
+		this.endTime = endTime;
 	}
 
 }
