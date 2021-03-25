@@ -71,19 +71,27 @@ public class Server {
 			System.out.println("Socket error: " + ex.getMessage());
 		} catch (IOException ex) {
 			System.out.println("I/O error: " + ex.getMessage());
-		} finally {
-			server.close();
 		}
 	}
 
-//	  0: {
-//			  Monday: [...],
-//			  Tuesday: [...]
-//    },
-//	  3: {
-//		  Monday: [...],
-//		  Tuesday: [...]
-//	  }
+	/**
+	 * 
+	 * @param facilityName - The name of facility.
+	 * @param days - The days to be queried.
+	 * @return availableTiming - The available timing for the queried facility on days given.
+	 * 		{
+	 * 			Day1: {
+	 * 				facility1: [...],
+	 * 				facility2: [...],
+	 * 			},
+	 * 			Day2: {
+	 * 				facility1: [...],
+	 * 				facility2: [...]
+	 * 			}
+	 * 		}
+	 * 
+	 * @throws UnknownFacilityException - Non-existing facility name.
+	 */
 	private Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityName)) {
@@ -105,13 +113,25 @@ public class Server {
 		return availableTiming;
 	}
 
+	/**
+	 * Make booking service
+	 * 
+	 * @param facilityName - The name of the facility.
+	 * @param facilityID - The ID of the facility.
+	 * @param day - The day of the booking.
+	 * @param startTime - The start time of the booking.
+	 * @param endTime - The end time of the booking.
+	 * @return uuid - A unique confirmation ID.
+	 * @throws UnknownFacilityException - Non-existing facility name.
+	 * @throws BookingFailedException - Unacceptable booking time. (Does not include no available time slot)
+	 */
 	private UUID makeBooking(String facilityName, int facilityID, Day day, Time startTime, Time endTime)
 			throws UnknownFacilityException, BookingFailedException {
-		UUID uuid = null;
-		Booking newBooking = new Booking(facilityName, facilityID, day, startTime, endTime);
 		if (!this.facilities.containsKey(facilityName)) {
 			throw new UnknownFacilityException();
 		}
+		UUID uuid = null;
+		Booking newBooking = new Booking(facilityName, facilityID, day, startTime, endTime);
 		boolean success = this.facilities.get(facilityName).get(facilityID).addBooking(newBooking);
 		if (success) {
 			uuid = newBooking.getUUID();
@@ -120,15 +140,18 @@ public class Server {
 		return uuid;
 	}
 
-	/*
-	 * Status code:
-	 * 0 -> Successful
-	 * 1 -> Not successful (no available slot for amended booking)
-	 * 2 -> Not successful (amendment is not acceptable, only amendment within the day itself is accepted, i.e. the offset is too large)
-	 * 3 -> Not successful (amendment is not acceptable, only amendment within the operating hours of the facility is accepted)
-	 * 4 -> Booking does not exist
+	/**
+	 * Booking amendment service
+	 * 
+	 * @param uuid - the confirmation id for the booking.
+	 * @param offset - the offset to be moved for the booking. (in minutes)
+	 * @return statusCode:
+	 * 		0 -> Successful
+	 * 		1 -> Not successful (no available slot for amended booking)
+	 * 		2 -> Not successful (amendment is not acceptable, only amendment within the day itself is accepted, i.e. the offset is too large)
+	 * 		3 -> Not successful (amendment is not acceptable, only amendment within the operating hours of the facility is accepted)
+	 * 		4 -> Booking does not exist
 	 */
-	// offset in minutes
 	private int amendBooking(UUID uuid, int offset) {
 		if (!this.bookings.containsKey(uuid)) {
 			return 4;
@@ -139,6 +162,19 @@ public class Server {
 		return facility.amendBooking(booking, offset);
 	}
 
+	/**
+	 * A method to generate facilities.
+	 * 
+	 * @return facilities - Generated facilities.
+	 * {
+	 * 		Facility Type 1 : {
+	 * 			facility #1: Facility
+	 * 		},
+	 * 		Facility Type 2 : {
+	 * 			facility #1: Facility
+	 * 		}
+	 * }
+	 */
 	private Hashtable<String, Hashtable<Integer, Facility>> generateFacilities() {
 		Hashtable<String, Hashtable<Integer, Facility>> facilities = new Hashtable<String, Hashtable<Integer, Facility>>();
 		facilities.put("Lecture Hall", new Hashtable<Integer, Facility>());
@@ -157,6 +193,9 @@ public class Server {
 		return facilities;
 	}
 
+	/**
+	 * A method to generate 1 random bookings on each day for a random facility ID.
+	 */
 	private void generateRandomBookings() {
 		Arrays.asList(Day.values()).forEach(day -> {
 			int facilityID = new Random().nextInt(15);
