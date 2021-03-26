@@ -7,6 +7,7 @@ import java.net.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
+import utils.*;
 
 /**
  * @author jame0019
@@ -43,6 +44,22 @@ public class Server {
 			socket.receive(request);
 
 			// Do whatever is required here, process data etc
+			// deserialization
+//			 Message message = deserialize(buffer, Message.class);
+			Message message = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
+			int opCode = message.getHeader().getOpCode();
+			
+			switch (opCode) {
+			case 0:
+				System.out.println("query");
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			}
 			System.out.println("Received: " + new String(request.getData()));
 
 			// get client ip address and port

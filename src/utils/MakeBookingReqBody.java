@@ -1,9 +1,22 @@
 package utils;
 
-public class MakeBookingReqBody extends Body {
+import java.util.UUID;
 
-	public MakeBookingReqBody() {
+import server.*;
+
+public class MakeBookingReqBody extends Body {
+	
+	public String facilityID;
+	public Day day;
+	public Time startTime;
+	public Time endTime;
+
+	public MakeBookingReqBody(String facilityID, Day day, Time startTime, Time endTime) {
 		super();
+		this.facilityID = facilityID;
+		this.day = day;
+		this.startTime = startTime;
+		this.endTime = endTime;
 		// TODO Auto-generated constructor stub
 	}
 
