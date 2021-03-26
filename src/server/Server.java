@@ -68,6 +68,13 @@ public class Server implements CallbackServer{
 		    	System.out.println("Class not found error: " + ex.getMessage());
 		    }
 	  }
+	  
+		/**
+		 * 
+		 * Main callback handler, logs client's IP and port.
+		 * @param request - DatagramPacket sent from client.
+		 * @throws IOException - Unable to reach client.
+		 */
 	  public void handleCallback(DatagramPacket request) throws IOException, ClassNotFoundException {
 	      // parse inputstream
 		  byte[] data = request.getData();
@@ -83,12 +90,27 @@ public class Server implements CallbackServer{
 	  }
 	  
 	  public void getBooking() {}
+	  
+		/**
+		 * 
+		 * Handler to add callback to registered list, sends ACK to client.
+		 * @param callback - MonitorCallback object sent from client.
+		 * @throws IOException - Unable to reach client.
+		 */
 	  public void addCallback(MonitorCallback callback) throws IOException {
 		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
 		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
 		  socket.send(reply);
 		  callbacks.add(callback);
 	  }
+	  
+		/**
+		 * 
+		 * Handler to remove callback from registered list,
+		 * sends EXPIRED_CALLBACK to client.
+		 * @param callback - MonitorCallback object to be removed.
+		 * @throws IOException - Unable to reach client.
+		 */
 	  public void removeCallback(MonitorCallback callback) throws IOException {
 		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
 		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
@@ -96,6 +118,13 @@ public class Server implements CallbackServer{
 		  callbacks.remove(callback);
 	  }
 	  
+		/**
+		 * 
+		 * Handler for sending messages to client.
+		 * @param callback - MonitorCallback object of the registered client.
+		 * @param message - message to be sent
+		 * @throws IOException - Unable to reach client.
+		 */
 	  private void notifyCallback(MonitorCallback callback, String message) throws IOException {
 			message = message + "\n" + "facility: " + callback.getMonitorFacilityType() + " timeleft: " + callback.getMonitorInterval();
 		  	byte[] buffer = message.getBytes();
@@ -103,6 +132,13 @@ public class Server implements CallbackServer{
 			socket.send(reply);
 		};
 	
+		
+		/**
+		 * 
+		 * Handler for sending messages to all clients.
+		 * @param message - message to be sent
+		 * @throws IOException - Unable to reach client.
+		 */
 	  private void notifyAllCallbacks(String message) throws RemoteException {
 		  callbacks.forEach(callback -> {
 			  try {
@@ -117,6 +153,11 @@ public class Server implements CallbackServer{
 		  });
 	  }
 	  
+	  
+		/**
+		 * 
+		 * -1 day simulator, removes if days left is 0.
+		 */
 	  private void updateMonitorInterval() {
 		  List<MonitorCallback> expiredCallbacks = new ArrayList<>();
 		  callbacks.forEach(callback -> {

@@ -27,12 +27,14 @@ public class Client {
 //		// TODO Auto-generated constructor stub
 //	}
 
+	
+	
 	/**
-	 * @param args
-	 * @throws IOException 
+	 * 
+	 * Initializes client's socket and enters main menu. 
+	 * @throws IOException - Unable to reach server.
+	 * 
 	 */
-	
-	
 	private void startClient() throws IOException {
 		// TODO Auto-generated method stub
 	      serverAddress = InetAddress.getByName(serverHostname);
@@ -48,15 +50,20 @@ public class Client {
 //	      System.out.println("Reply: " + new String(reply.getData()));
 	}
 
+	/**
+	 * 
+	 * Perform monitoring of facility, prompt users for facility input.
+	 * @throws IOException - Unable to reach server.
+	 */
 	private void monitorFacility() throws IOException {
 		console("What facility type would you like to be notified of? (Enter 0 to exit)");
-		int facilityType = scanner.nextInt(); scanner.nextLine();
-		if (facilityType == 0) {
+		String facilityType = scanner.nextLine();
+		if (facilityType == "0") {
 			return;
 		}
 		console("Which facility would you like to be notified of? (Enter 0 to exit)");
-		int facilityNumber = scanner.nextInt(); scanner.nextLine();
-		if (facilityNumber == 0) {
+		int facilityID = scanner.nextInt(); scanner.nextLine();
+		if (facilityID == 0) {
 			return;
 		}
 		console("Please enter duration of subscription. (Enter 0 to exit)");
@@ -65,10 +72,19 @@ public class Client {
 			return;
 		}
 		
-		MonitorCallback callback = new MonitorCallback(facilityType, facilityNumber, monitorInterval);
+		MonitorCallback callback = new MonitorCallback(facilityType, facilityID, monitorInterval);
 		sendCallback(callback);  
 	}
 
+	/**
+	 * 
+	 * Performs sending and acknowledgement checking on callbacks.
+	 * Waits for incoming notifications regarding monitored facility,
+	 * until callback is expired.
+	 * @param callback - MonitorCallback object that contains the monitored
+	 * 					 facility.
+	 * @throws IOException - Unable to reach server.
+	 */
 	public void sendCallback(MonitorCallback callback) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
