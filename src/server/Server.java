@@ -41,11 +41,12 @@ public class Server implements CallbackServer{
 			// Do whatever is required here, process data etc
 			// deserialization
 //			 Message message = deserialize(buffer, Message.class);
-			Message message = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
-			int opCode = message.getHeader().getOpCode();
+			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
+			int opCode = requestMessage.getHeader().getOpCode();
 
 		    InetAddress clientAddr = request.getAddress();
 		    int clientPort = request.getPort();
+		    Body reqBody = requestMessage.getBody();
 		    
 			switch (opCode) {
 			case 0:
@@ -54,9 +55,11 @@ public class Server implements CallbackServer{
 			case 1:
 				break;
 			case 2:
+				handleAmendBooking((AmendBookingReqBody) reqBody);
+
 				break;
 			case 3:
-			    handleCallback(request);
+			    handleCallback((MonitorAvailabilityReqBody) reqBody, clientAddr, clientPort);
 			    while (callbacks.size() > 0) {
 				    updateMonitorInterval();
 				    notifyAllCallbacks("Received with thanks");
@@ -70,7 +73,7 @@ public class Server implements CallbackServer{
 			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 			socket.send(response);
 
-			this.testCallback(request);
+//			this.testCallback(request);
 //			this.testQueryAvailability();
 //			this.testMakeBooking();
 //			this.testAmendBooking();
@@ -98,18 +101,30 @@ public class Server implements CallbackServer{
 		 * @param request - DatagramPacket sent from client.
 		 * @throws IOException - Unable to reach client.
 		 */
-	  public void handleCallback(DatagramPacket request) throws IOException, ClassNotFoundException {
+	  public void handleCallback(MonitorAvailabilityReqBody reqBody, InetAddress clientAddr, int clientPort) throws IOException, ClassNotFoundException {
 	      // parse inputstream
-		  byte[] data = request.getData();
-		  InetAddress clientAddr = request.getAddress();
-		  int clientPort = request.getPort();
-		  
-          ByteArrayInputStream baos = new ByteArrayInputStream(request.getData());
-          ObjectInputStream oos = new ObjectInputStream(baos);
-          MonitorCallback newCallback = (MonitorCallback) oos.readObject();
+          MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
           newCallback.setAddress(clientAddr);
           newCallback.setPort(clientPort);
 	      addCallback(newCallback);
+	  }
+	  
+	  public AmendBookingRespBody handleAmendBooking(AmendBookingReqBody reqBody) {
+		  UUID bookingID = reqBody.getBookingID();
+		  int offset = reqBody.getOffset();
+		  int statusCode = amendBooking(bookingID, offset);
+		  
+		  if (statusCode == 0) {
+			  return new AmendBookingRespBody(null);
+		  } else if (statusCode == 1) {
+			  return new AmendBookingRespBody("The timeslot is not available!");
+		  } else if (statusCode == 2) {
+			  return new AmendBookingRespBody("The timeslot spans across two different days!");
+		  } else if (statusCode == 3) {
+			  return new AmendBookingRespBody("The timeslot exceeds our operating hours!");
+		  } else if (statusCode == 4) {
+			  return new AmendBookingRespBody("Invalid UUID");
+		  } else return new AmendBookingRespBody("Unexpected Error Occured!");
 	  }
 	  
 	  public void getBooking() {}
@@ -296,7 +311,7 @@ public class Server implements CallbackServer{
 	/**
 	 * Booking amendment service
 	 * 
-	 * @param uuid - the confirmation id for the booking.
+	 * @param bookingID - the confirmation id for the booking.
 	 * @param offset - the offset to be moved for the booking. (in minutes)
 	 * @return statusCode:
 	 * 		0 -> Successful
@@ -305,12 +320,12 @@ public class Server implements CallbackServer{
 	 * 		3 -> Not successful (amendment is not acceptable, only amendment within the operating hours of the facility is accepted)
 	 * 		4 -> Booking does not exist
 	 */
-	private int amendBooking(UUID uuid, int offset) {
-		if (!this.bookings.containsKey(uuid)) {
+	private int amendBooking(UUID bookingID, int offset) {
+		if (!this.bookings.containsKey(bookingID)) {
 			return 4;
 		}
 
-		Booking booking = this.bookings.get(uuid);
+		Booking booking = this.bookings.get(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
 		return facility.amendBooking(booking, offset);
 	}
@@ -372,13 +387,14 @@ public class Server implements CallbackServer{
 	
 	private String res = "";
 	
-	private void testCallback(DatagramPacket request) throws ClassNotFoundException, IOException {
-	    handleCallback(request);
-	    while (callbacks.size() > 0) {
-		    updateMonitorInterval();
-		    notifyAllCallbacks("Received with thanks");
-	    }
-	}
+//	private void testCallback(DatagramPacket request) throws ClassNotFoundException, IOException {
+//	    handleCallback(request);
+//	    while (callbacks.size() > 0) {
+//		    updateMonitorInterval();
+//		    notifyAllCallbacks("Received with thanks");
+//	    }
+//	}
+	
 	private void testQueryAvailability() {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
