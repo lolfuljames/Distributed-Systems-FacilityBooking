@@ -5,6 +5,7 @@ package server;
 
 import java.net.*;
 import java.util.*;
+import java.util.Map.Entry;
 import java.io.*;
 
 /**
@@ -52,8 +53,8 @@ public class Server {
 			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 			socket.send(response);
 
-//			this.testQueryAvailability();
-			this.testMakeBooking();
+			this.testQueryAvailability();
+//			this.testMakeBooking();
 //			this.testAmendBooking();
 		}
 	}
@@ -111,6 +112,27 @@ public class Server {
 		});
 
 		return availableTiming;
+	}
+	
+	private String serviceQueryAvailability(String facilityName, ArrayList<Day> days) {
+		String res = null;
+		try {
+			Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
+			res += String.format("Availability for %s:\n", facilityName);
+			for (Entry<Day, Hashtable<Integer, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+				res += String.format("%s:\n", entry.getKey());
+				for (Entry<Integer, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+					System.out.println(e.getKey());
+					for (TimePeriod timePeriod : e.getValue()) {
+						res += String.format("%s: %s - %s\n", e.getKey().toString(), timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+					}
+				}
+				res += "--------------------------------------------\n";
+			}
+		} catch (UnknownFacilityException e) {
+			res = String.format("Error! The facility (%s) does not exist.\n", facilityName);
+		}
+		return res;
 	}
 
 	/**
@@ -225,26 +247,27 @@ public class Server {
 	private void testQueryAvailability() {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
+		days.add(Day.TUESDAY);
 		String facilityName = "Lecture Hall";
-		try {
-			Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
-					days);
-
-			System.out.println("Availability for Lecture Hall:");
-			availability.forEach((day, innerHashtable) -> {
-				System.out.println(day + ": ");
-				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
-					availableTimePeriods.forEach(timePeriod -> {
-						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
-								+ timePeriod.getEndTime().toString());
-					});
-				});
-				System.out.println("--------------------------------------------");
-			});
-		} catch (UnknownFacilityException e) {
-			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
-		}
-
+//		try {
+//			Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
+//					days);
+//
+//			System.out.println("Availability for Lecture Hall:");
+//			availability.forEach((day, innerHashtable) -> {
+//				System.out.println(day + ": ");
+//				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
+//					availableTimePeriods.forEach(timePeriod -> {
+//						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
+//								+ timePeriod.getEndTime().toString());
+//					});
+//				});
+//				System.out.println("--------------------------------------------");
+//			});
+//		} catch (UnknownFacilityException e) {
+//			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+//		}
+		System.out.println(this.serviceQueryAvailability(facilityName, days));
 	}
 
 	private void testMakeBooking() {
