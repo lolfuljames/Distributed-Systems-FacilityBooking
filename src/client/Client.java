@@ -6,7 +6,7 @@ package client;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import util.*;
+import utils.*;
 
 /**
  * @author jame0019
@@ -19,14 +19,6 @@ public class Client {
 	private DatagramSocket socket = null;
 	private int serverPort = 2222;
 	private Scanner scanner = new Scanner(System.in);
-	
-	/**
-	 * 
-	 */
-//	public Client() {
-//		// TODO Auto-generated constructor stub
-//	}
-
 	
 	
 	/**
@@ -134,7 +126,6 @@ public class Client {
 	}
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		Client client = new Client();
 		 try {
 			 client.startClient();

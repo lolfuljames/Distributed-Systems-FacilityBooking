@@ -1,7 +1,7 @@
 /**
  * 
  */
-package util;
+package utils;
 
 import java.net.*;
 import java.rmi.Remote;
