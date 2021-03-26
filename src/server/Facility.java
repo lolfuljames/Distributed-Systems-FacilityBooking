@@ -15,7 +15,7 @@ import java.util.Hashtable;
 public class Facility {
 
 	private String name;
-	private int facilityID;
+	private String facilityID;
 	private Time earliestTime;
 	private Time latestTime;
 	private Hashtable<Day, ArrayList<Booking>> bookings;
@@ -23,7 +23,7 @@ public class Facility {
 	/**
 	 * 
 	 */
-	public Facility(String name, int facilityID, Time earliestTime, Time latestTime) {
+	public Facility(String name, String facilityID, Time earliestTime, Time latestTime) {
 		// TODO Auto-generated constructor stub
 		this.name = name;
 		this.facilityID = facilityID;
@@ -39,7 +39,7 @@ public class Facility {
 		return this.name;
 	}
 
-	public int getFacilityID() {
+	public String getFacilityID() {
 		return this.facilityID;
 	}
 

@@ -19,7 +19,7 @@ public class Server {
 	 */
 	private DatagramSocket socket;
 
-	private Hashtable<String, Hashtable<Integer, Facility>> facilities;
+	private Hashtable<String, Hashtable<String, Facility>> facilities;
 	private Hashtable<UUID, Booking> bookings;
 
 	public Server(int port) throws SocketException {
@@ -93,19 +93,19 @@ public class Server {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
+	private Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityName)) {
 			throw new UnknownFacilityException();
 		}
-		Hashtable<Integer, Facility> facilityList = this.facilities.get(facilityName);
-		Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availableTiming = new Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>>();
+		Hashtable<String, Facility> facilityList = this.facilities.get(facilityName);
+		Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availableTiming = new Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>>();
 
 		facilityList.forEach((facilityID, facility) -> {
 			Hashtable<Day, ArrayList<TimePeriod>> aTime = facility.getAvailableTiming(days);
 			aTime.forEach((day, timePeriods) -> {
 				if (!availableTiming.containsKey(day)) {
-					availableTiming.put(day, new Hashtable<Integer, ArrayList<TimePeriod>>());
+					availableTiming.put(day, new Hashtable<String, ArrayList<TimePeriod>>());
 				}
 				availableTiming.get(day).put(facilityID, timePeriods);
 			});
@@ -117,11 +117,11 @@ public class Server {
 	private String serviceQueryAvailability(String facilityName, ArrayList<Day> days) {
 		String res = null;
 		try {
-			Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
+			Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
 			res += String.format("Availability for %s:\n", facilityName);
-			for (Entry<Day, Hashtable<Integer, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+			for (Entry<Day, Hashtable<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
 				res += String.format("%s:\n", entry.getKey());
-				for (Entry<Integer, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
 					System.out.println(e.getKey());
 					for (TimePeriod timePeriod : e.getValue()) {
 						res += String.format("%s: %s - %s\n", e.getKey().toString(), timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
@@ -147,7 +147,7 @@ public class Server {
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 * @throws BookingFailedException - Unacceptable booking time. (Does not include no available time slot)
 	 */
-	private UUID makeBooking(String facilityName, int facilityID, Day day, Time startTime, Time endTime)
+	private UUID makeBooking(String facilityName, String facilityID, Day day, Time startTime, Time endTime)
 			throws UnknownFacilityException, BookingFailedException {
 		if (!this.facilities.containsKey(facilityName)) {
 			throw new UnknownFacilityException();
@@ -197,17 +197,17 @@ public class Server {
 	 * 		}
 	 * }
 	 */
-	private Hashtable<String, Hashtable<Integer, Facility>> generateFacilities() {
-		Hashtable<String, Hashtable<Integer, Facility>> facilities = new Hashtable<String, Hashtable<Integer, Facility>>();
-		facilities.put("Lecture Hall", new Hashtable<Integer, Facility>());
-		facilities.put("Tutorial Room", new Hashtable<Integer, Facility>());
-		facilities.put("Lab", new Hashtable<Integer, Facility>());
+	private Hashtable<String, Hashtable<String, Facility>> generateFacilities() {
+		Hashtable<String, Hashtable<String, Facility>> facilities = new Hashtable<String, Hashtable<String, Facility>>();
+		facilities.put("Lecture Hall", new Hashtable<String, Facility>());
+		facilities.put("Tutorial Room", new Hashtable<String, Facility>());
+		facilities.put("Lab", new Hashtable<String, Facility>());
 		try {
-			for (int i = 0; i < 5; i++) {
-				facilities.get("Lecture Hall").put(i, new Facility("Lecture Hall", i, new Time(8, 0), new Time(17, 0)));
-				facilities.get("Tutorial Room").put(i + 5,
-						new Facility("Tutorial Room", i + 5, new Time(8, 0), new Time(17, 0)));
-				facilities.get("Lab").put(i + 10, new Facility("Lab", i + 10, new Time(8, 0), new Time(17, 0)));
+			for (int i = 1; i < 6; i++) {
+				facilities.get("Lecture Hall").put(String.format("LT-%d", i), new Facility("Lecture Hall", String.format("LT-%d", i), new Time(8, 0), new Time(17, 0)));
+				facilities.get("Tutorial Room").put(String.format("LT-%d", i),
+						new Facility("Tutorial Room", String.format("TR-%d", i), new Time(8, 0), new Time(17, 0)));
+				facilities.get("Lab").put(String.format("LT-%d", i), new Facility("Lab", String.format("LAB-%d", i), new Time(8, 0), new Time(17, 0)));
 			}
 		} catch (TimeErrorException e) {
 			System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
@@ -220,19 +220,14 @@ public class Server {
 	 */
 	private void generateRandomBookings() {
 		Arrays.asList(Day.values()).forEach(day -> {
-			int facilityID = new Random().nextInt(15);
+			String facilityID = String.format("LT-%d", new Random().nextInt(5) + 1);
+			
 			int startHour = new Random().nextInt(9);
 			int endHour = new Random().nextInt(9 - startHour);
 			startHour += 8;
 			endHour += startHour + 1;
 			try {
-				if (facilityID < 5) {
-					this.makeBooking("Lecture Hall", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
-				} else if (facilityID < 10) {
-					this.makeBooking("Tutorial Room", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
-				} else if (facilityID < 10) {
-					this.makeBooking("Lab", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
-				}
+				this.makeBooking("Lecture Hall", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
 			} catch (TimeErrorException e) {
 				System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
 			} catch (BookingFailedException e) {
@@ -243,30 +238,34 @@ public class Server {
 			}
 		});
 	}
+	
+	private String res = "";
 
 	private void testQueryAvailability() {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
 		days.add(Day.TUESDAY);
 		String facilityName = "Lecture Hall";
-//		try {
-//			Hashtable<Day, Hashtable<Integer, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
-//					days);
-//
-//			System.out.println("Availability for Lecture Hall:");
-//			availability.forEach((day, innerHashtable) -> {
-//				System.out.println(day + ": ");
-//				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
-//					availableTimePeriods.forEach(timePeriod -> {
-//						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
-//								+ timePeriod.getEndTime().toString());
-//					});
-//				});
-//				System.out.println("--------------------------------------------");
-//			});
-//		} catch (UnknownFacilityException e) {
-//			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
-//		}
+		try {
+			Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
+					days);
+
+
+			System.out.println("Availability for Lecture Hall:");
+			availability.forEach((day, innerHashtable) -> {
+				this.res += "";
+				System.out.println(day + ": ");
+				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
+					availableTimePeriods.forEach(timePeriod -> {
+						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
+								+ timePeriod.getEndTime().toString());
+					});
+				});
+				System.out.println("--------------------------------------------");
+			});
+		} catch (UnknownFacilityException e) {
+			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+		}
 		System.out.println(this.serviceQueryAvailability(facilityName, days));
 	}
 
@@ -275,17 +274,17 @@ public class Server {
 //		String facilityName = "Lecture Hal";	// Wrong facility name test case
 		try {
 			this.testQueryAvailability();
-			UUID uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(13, 0), new Time(15, 0));
+			UUID uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(13, 0), new Time(15, 0));
 			System.out.println(uuid);	// Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(8, 0), new Time(9, 0));
+			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
 			System.out.println(uuid);	// Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(9, 0), new Time(11, 0));
+			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
 			System.out.println(uuid);	// Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(9, 0), new Time(11, 0));
+			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
 			System.out.println(uuid);	// Expected output: null (No available time slot test case)
-			uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(10, 59), new Time(12, 0));
+			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(10, 59), new Time(12, 0));
 			System.out.println(uuid);	// Expected output: null (No available time slot test case)
-			uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(17, 01), new Time(18, 0));	// Expected output: Exception thrown (Non-operating hours test case)
+			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(17, 01), new Time(18, 0));	// Expected output: Exception thrown (Non-operating hours test case)
 			this.testQueryAvailability();
 		} catch (TimeErrorException e) {
 			System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
@@ -300,8 +299,8 @@ public class Server {
 		String facilityName = "Lecture Hall";
 		try {
 			this.testQueryAvailability();
-			UUID uuid = this.makeBooking(facilityName, 0, Day.MONDAY, new Time(8, 0), new Time(9, 0));
-			this.makeBooking(facilityName, 0, Day.MONDAY, new Time(9, 30), new Time(10, 30));
+			UUID uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
+			this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 30), new Time(10, 30));
 			this.testQueryAvailability();
 //			int offset = 30;			// Expected statusCode: 0
 //			int offset = 150;			// Expected statusCode: 0

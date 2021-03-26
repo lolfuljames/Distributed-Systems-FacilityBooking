@@ -13,14 +13,14 @@ public class Booking {
 	
 	private UUID uuid;
 	private String facilityName;
-	private int facilityID;
+	private String facilityID;
 	private Day day;
 	private TimePeriod timePeriod;
 
 	/**
 	 * 
 	 */
-	public Booking(String facilityName, int facilityID, Day day, Time startTime, Time endTime) throws BookingFailedException {
+	public Booking(String facilityName, String facilityID, Day day, Time startTime, Time endTime) throws BookingFailedException {
 
 		// Allow single day booking only
 		if (startTime.compareTo(endTime) > 0) {
@@ -45,7 +45,7 @@ public class Booking {
 		return this.facilityName;
 	}
 	
-	public int getFacilityID() {
+	public String getFacilityID() {
 		return this.facilityID;
 	}
 	
