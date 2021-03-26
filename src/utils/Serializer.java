@@ -165,9 +165,9 @@ public class Serializer {
 //		System.out.println(days);
 
 		Company company = new Company();
-		company.employees.add(new Employee("TJL"));
-		company.employees.add(new Employee("TJX"));
-		company.employees.add(new Employee("TJE"));
+
+		System.out.println("abc");
+		System.out.println(company.getEmployeeNames());
 		try {
 			buf = Serializer.serialize(company, buf);
 		} catch (IllegalArgumentException e) {
@@ -179,7 +179,7 @@ public class Serializer {
 		}
 		System.out.println(buf);
 		Company outCom = Deserializer.deserialize(buf, Company.class);
-		System.out.println(company.employees);
+		System.out.println(outCom.getEmployeeNames());
 
 		ArrayList<String> facilities = new ArrayList<String>();
 		facilities.add("Lecture Theatre");
@@ -194,8 +194,7 @@ public class Serializer {
 			e.printStackTrace();
 		}
 
-		System.out.println(Deserializer.deserialize(buf, new ArrayList<String>() {
-		}));
+		System.out.println(Deserializer.deserialize(buf, new ArrayList<String>() {}));
 
 	}
 }
