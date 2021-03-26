@@ -46,20 +46,35 @@ public class Server {
 			// Do whatever is required here, process data etc
 			// deserialization
 //			 Message message = deserialize(buffer, Message.class);
-			Message message = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
-			int opCode = message.getHeader().getOpCode();
+			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
+			int opCode = requestMessage.getHeader().getOpCode();
+
+			Message responseMessage = null;
+			Body reqBody = null;
+			Body respBody = null;
+			Header header = null;
 			
 			switch (opCode) {
 			case 0:
-				System.out.println("query");
+				reqBody = requestMessage.getBody();
+				respBody = this.serviceQueryAvailability((QueryAvailabilityReqBody) reqBody);
+				header = new Header(UUID.randomUUID(), opCode, 1);
+				responseMessage = new Message(header, respBody);
 				break;
 			case 1:
+				reqBody = requestMessage.getBody();
+				respBody = this.serviceMakeBooking((MakeBookingReqBody) reqBody);
+				header = new Header(UUID.randomUUID(), opCode, 1);
+				responseMessage = new Message(header, respBody);
 				break;
 			case 2:
 				break;
 			case 3:
 				break;
 			}
+
+//			buf = Serializer.serialize(responseMessage, buf);
+//			server.send(buf);
 			System.out.println("Received: " + new String(request.getData()));
 
 			// get client ip address and port
@@ -131,15 +146,38 @@ public class Server {
 		return availableTiming;
 	}
 	
-	private String serviceQueryAvailability(String facilityName, ArrayList<Day> days) {
+	private RespBody serviceMakeBooking(MakeBookingReqBody reqBody) {
+		String facilityID = reqBody.getFacilityID();
+		String facilityName = facilityID.split("-", 1)[0];
+		Day day = reqBody.getDay();
+		Time startTime = reqBody.getStartTime();
+		Time endTime = reqBody.getEndTime();
+		
+		UUID bookingID = null;
+		String errorMessage = null;
+		try {
+			bookingID = this.makeBooking(facilityName, facilityID, day, startTime, endTime);
+		} catch (UnknownFacilityException e) {
+			errorMessage = String.format("The facility (%s) does not exist.", facilityName);
+		} catch (BookingFailedException e) {
+			errorMessage = e.getMessage();
+		}
+		
+		RespBody respBody = new MakeBookingRespBody(errorMessage, bookingID);
+		return respBody;
+	}
+
+	private RespBody serviceQueryAvailability(QueryAvailabilityReqBody reqBody) {
+		ArrayList<Day> days = reqBody.getDays();
+		String facilityName = reqBody.getFacilityName();
 		String res = "";
+		String errorMessage = null;
 		try {
 			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
 			res += String.format("Availability for %s:\n", facilityName);
 			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
 				res += String.format("%s:\n", entry.getKey());
 				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-//					System.out.println(e.getKey());
 					for (TimePeriod timePeriod : e.getValue()) {
 						res += String.format("%s: %s - %s\n", e.getKey().toString(), timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
 					}
@@ -147,9 +185,11 @@ public class Server {
 				res += "--------------------------------------------\n";
 			}
 		} catch (UnknownFacilityException e) {
-			res = String.format("Error! The facility (%s) does not exist.\n", facilityName);
+			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityName);
 		}
-		return res;
+		
+		RespBody respBody = new QueryAvailabilityRespBody(errorMessage, res);
+		return respBody;
 	}
 
 	/**
@@ -216,15 +256,15 @@ public class Server {
 	 */
 	private LinkedHashMap<String, LinkedHashMap<String, Facility>> generateFacilities() {
 		LinkedHashMap<String, LinkedHashMap<String, Facility>> facilities = new LinkedHashMap<String, LinkedHashMap<String, Facility>>();
-		facilities.put("Lecture Hall", new LinkedHashMap<String, Facility>());
-		facilities.put("Tutorial Room", new LinkedHashMap<String, Facility>());
-		facilities.put("Lab", new LinkedHashMap<String, Facility>());
+		facilities.put("LT", new LinkedHashMap<String, Facility>());
+		facilities.put("TR", new LinkedHashMap<String, Facility>());
+		facilities.put("LAB", new LinkedHashMap<String, Facility>());
 		try {
 			for (int i = 1; i < 6; i++) {
-				facilities.get("Lecture Hall").put(String.format("LT-%d", i), new Facility("Lecture Hall", String.format("LT-%d", i), new Time(8, 0), new Time(17, 0)));
-				facilities.get("Tutorial Room").put(String.format("LT-%d", i),
-						new Facility("Tutorial Room", String.format("TR-%d", i), new Time(8, 0), new Time(17, 0)));
-				facilities.get("Lab").put(String.format("LT-%d", i), new Facility("Lab", String.format("LAB-%d", i), new Time(8, 0), new Time(17, 0)));
+				facilities.get("LT").put(String.format("LT-%d", i), new Facility("LT", String.format("LT-%d", i), new Time(8, 0), new Time(17, 0)));
+				facilities.get("TR").put(String.format("LT-%d", i),
+						new Facility("TR", String.format("TR-%d", i), new Time(8, 0), new Time(17, 0)));
+				facilities.get("LAB").put(String.format("LT-%d", i), new Facility("LAB", String.format("LAB-%d", i), new Time(8, 0), new Time(17, 0)));
 			}
 		} catch (TimeErrorException e) {
 			System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
@@ -244,7 +284,7 @@ public class Server {
 			startHour += 8;
 			endHour += startHour + 1;
 			try {
-				this.makeBooking("Lecture Hall", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
+				this.makeBooking("LT", facilityID, day, new Time(startHour, 0), new Time(endHour, 0));
 			} catch (TimeErrorException e) {
 				System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
 			} catch (BookingFailedException e) {
@@ -262,13 +302,13 @@ public class Server {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
 		days.add(Day.TUESDAY);
-		String facilityName = "Lecture Hall";
+		String facilityName = "LT";
 //		try {
 //			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
 //					days);
 //
 //
-//			System.out.println("Availability for Lecture Hall:");
+//			System.out.println("Availability for LT:");
 //			availability.forEach((day, innerHashtable) -> {
 //				this.res += "";
 //				System.out.println(day + ": ");
@@ -283,11 +323,11 @@ public class Server {
 //		} catch (UnknownFacilityException e) {
 //			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
 //		}
-		System.out.println(this.serviceQueryAvailability(facilityName, days));
+//		System.out.println(this.serviceQueryAvailability(facilityName, days));
 	}
 
 	private void testMakeBooking() {
-		String facilityName = "Lecture Hall";
+		String facilityName = "LT";
 //		String facilityName = "Lecture Hal";	// Wrong facility name test case
 		try {
 			this.testQueryAvailability();
@@ -313,7 +353,7 @@ public class Server {
 	}
 	
 	private void testAmendBooking() {
-		String facilityName = "Lecture Hall";
+		String facilityName = "LT";
 		try {
 			this.testQueryAvailability();
 			UUID uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));

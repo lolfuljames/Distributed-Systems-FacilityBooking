@@ -11,14 +11,14 @@ import java.util.UUID;
  */
 public class MakeBookingRespBody extends RespBody {
 	
-	public UUID payload;
+	public UUID bookingID;
 
 	/**
 	 * @param errorMessage
 	 */
 	public MakeBookingRespBody(String errorMessage, UUID bookingID) {
 		super(errorMessage);
-		this.payload = bookingID;
+		this.bookingID = bookingID;
 		// TODO Auto-generated constructor stub
 	}
 

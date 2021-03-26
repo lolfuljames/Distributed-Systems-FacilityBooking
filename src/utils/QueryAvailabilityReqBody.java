@@ -13,5 +13,13 @@ public class QueryAvailabilityReqBody extends Body {
 		this.days = days;
 		this.facilityName = facilityName;
 	}
+	
+	public ArrayList<Day> getDays() {
+		return this.days;
+	}
+	
+	public String getFacilityName() {
+		return this.facilityName;
+	}
 
 }

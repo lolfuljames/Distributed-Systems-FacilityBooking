@@ -13,11 +13,67 @@ public class MakeBookingReqBody extends Body {
 
 	public MakeBookingReqBody(String facilityID, Day day, Time startTime, Time endTime) {
 		super();
-		this.facilityID = facilityID;
-		this.day = day;
-		this.startTime = startTime;
-		this.endTime = endTime;
+		this.setFacilityID(facilityID);
+		this.setDay(day);
+		this.setStartTime(startTime);
+		this.setEndTime(endTime);
 		// TODO Auto-generated constructor stub
+	}
+
+	/**
+	 * @return the facilityID
+	 */
+	public String getFacilityID() {
+		return facilityID;
+	}
+
+	/**
+	 * @param facilityID the facilityID to set
+	 */
+	public void setFacilityID(String facilityID) {
+		this.facilityID = facilityID;
+	}
+
+	/**
+	 * @return the day
+	 */
+	public Day getDay() {
+		return day;
+	}
+
+	/**
+	 * @param day the day to set
+	 */
+	public void setDay(Day day) {
+		this.day = day;
+	}
+
+	/**
+	 * @return the startTime
+	 */
+	public Time getStartTime() {
+		return startTime;
+	}
+
+	/**
+	 * @param startTime the startTime to set
+	 */
+	public void setStartTime(Time startTime) {
+		this.startTime = startTime;
+	}
+
+	/**
+	 * @return the endTime
+	 */
+	public Time getEndTime() {
+		return endTime;
+	}
+
+	/**
+	 * @param endTime the endTime to set
+	 */
+	public void setEndTime(Time endTime) {
+		this.endTime = endTime;
 	}
 
 }
