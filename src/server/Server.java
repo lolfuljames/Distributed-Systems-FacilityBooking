@@ -40,12 +40,14 @@ public class Server {
 		System.out.println("Servicing the requests...");
 		while (true) {
 			byte[] buffer = new byte[1000];
+			
 			DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 			socket.receive(request);
 
 			// Do whatever is required here, process data etc
 			// deserialization
-//			 Message message = deserialize(buffer, Message.class);
+
+//			Message message = Deserializer.deserialize(buffer, Message.class);
 			Message message = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
 			int opCode = message.getHeader().getOpCode();
 			

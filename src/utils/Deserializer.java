@@ -67,7 +67,7 @@ public class Deserializer {
 	public static <T> T deserialize(ByteBuffer buffer, Class<T> clazz) {
 		
 		
-		System.out.println("Deserializing using clazz...");
+		System.out.println("Deserializing using clazz: " + clazz);
 		buffer.clear(); // Set pointer to position 0
 		buffer.order(ByteOrder.LITTLE_ENDIAN); // Set Little Indian Byte order
 		
@@ -142,15 +142,19 @@ public class Deserializer {
 		} else if (clazz.isEnum() || clazz == Enum.class) {
 			return (Object) readEnum(buffer);
 		} else {
-//			System.out.println(clazz);
 			Object obj = clazz.newInstance();
-			for (Field field : obj.getClass().getFields()) {
+			for (Field field : clazz.getFields()) {
+				System.out.println("Setting field: " + field.getName());
 				int modifiers = field.getModifiers();
 				if (!Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers) && Modifier.isPublic(modifiers)) {
 					Type type = field.getGenericType();
-//					System.out.print("Field: " + field.getName() + "\t");
-//					System.out.println("Generic Type: " + type);
-					read(type, field, obj, buffer);
+					System.out.print("Field: " + field.getName() + "\t");
+					System.out.println("Generic Type: " + type);
+					if(type == Body.class) {
+						field.set(obj, readBody(obj, buffer));
+					} else {
+						read(type, field, obj, buffer);						
+					}
 				}
 			}
 			return (Object) obj;
@@ -184,14 +188,33 @@ public class Deserializer {
 
 			field.set(obj, returnObj);
 		} else if (type == Integer.TYPE || type == Integer.class) {
-			field.set(obj, readInt(buffer));
+			int temp = readInt(buffer);
+			System.out.println("Read Integer: " + temp);
+			field.set(obj, temp);
+//			field.set(obj, readInt(buffer));
 		} else if (type == UUID.class) {
-			field.set(obj, readUUID(buffer));
+			UUID temp = readUUID(buffer);
+			System.out.println("Read UUID: " + temp);
+			field.set(obj, temp);
+//			field.set(obj, readUUID(buffer));
 		} else if (type == String.class) {
-			field.set(obj, readString(buffer));
+			String temp = readString(buffer);
+			System.out.println("Read String: " + temp);
+			field.set(obj, temp);
+//			field.set(obj, readString(buffer));
 		} else if (type == Enum.class) {
 			field.set(obj, readEnum(buffer));
+		} else {
+			field.set(obj, read(field.getType(), buffer));
 		}
+	}
+	
+	public static Body readBody(Object obj, ByteBuffer buffer) {
+
+		int opCode = ((Message) obj).getHeader().getOpCode();
+		int messageType = ((Message) obj).getHeader().messageType;
+		
+		return null;
 	}
 
 	public static int readInt(ByteBuffer buffer) {

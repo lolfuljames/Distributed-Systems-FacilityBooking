@@ -1,6 +1,7 @@
 package utils;
 
 import java.util.*;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -98,29 +99,29 @@ public class Serializer {
 
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 
-		System.out.println("Testing Integer serialization and deserialization");
-		try {
-			buf = Serializer.serialize(123, buf);
-		} catch (IllegalArgumentException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IllegalAccessException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		assert 123 == Deserializer.deserialize(buf, Integer.class);
-
-		System.out.println("Testing String serialization and deserialization");
-		try {
-			buf = Serializer.serialize("ABCDEF", buf);
-		} catch (IllegalArgumentException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IllegalAccessException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		assert "ABCDEF".equals(Deserializer.deserialize(buf, String.class));
+//		System.out.println("Testing Integer serialization and deserialization");
+//		try {
+//			buf = Serializer.serialize(123, buf);
+//		} catch (IllegalArgumentException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		} catch (IllegalAccessException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		assert 123 == Deserializer.deserialize(buf, Integer.class);
+//
+//		System.out.println("Testing String serialization and deserialization");
+//		try {
+//			buf = Serializer.serialize("ABCDEF", buf);
+//		} catch (IllegalArgumentException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		} catch (IllegalAccessException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		assert "ABCDEF".equals(Deserializer.deserialize(buf, String.class));
 
 //		System.out.println("Testing ENUM serialization and deserialization");
 //		try {
@@ -134,19 +135,19 @@ public class Serializer {
 //		}
 //		assert Day.FRIDAY == Deserializer.deserialize(buf, Enum.class);
 
-		System.out.println("Testing UUID serialization and deserialization");
-		UUID randomUUID = UUID.randomUUID();
-		System.out.println(randomUUID);
-		try {
-			buf = Serializer.serialize(randomUUID, buf);
-		} catch (IllegalArgumentException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IllegalAccessException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		assert randomUUID.equals(Deserializer.deserialize(buf, UUID.class));
+//		System.out.println("Testing UUID serialization and deserialization");
+//		UUID randomUUID = UUID.randomUUID();
+//		System.out.println(randomUUID);
+//		try {
+//			buf = Serializer.serialize(randomUUID, buf);
+//		} catch (IllegalArgumentException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		} catch (IllegalAccessException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		assert randomUUID.equals(Deserializer.deserialize(buf, UUID.class));
 
 //		ArrayList<Day> days = new ArrayList<Day>();
 //		days.add(Day.MONDAY);
@@ -180,11 +181,25 @@ public class Serializer {
 //		Company outCom = Deserializer.deserialize(buf, Company.class);
 //		System.out.println(outCom.getEmployeeNames());
 
-		ArrayList<String> facilities = new ArrayList<String>();
-		facilities.add("Lecture Theatre");
-		facilities.add("Tutorial Room");
+//		ArrayList<String> facilities = new ArrayList<String>();
+//		facilities.add("Lecture Theatre");
+//		facilities.add("Tutorial Room");
+//		try {
+//			buf = Serializer.serialize(facilities, buf);
+//		} catch (IllegalArgumentException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IllegalAccessException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//		System.out.println(Deserializer.deserialize(buf, new ArrayList<String>() {}));
+
+		Message message = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
+
 		try {
-			buf = Serializer.serialize(facilities, buf);
+			buf = Serializer.serialize(message, buf);
 		} catch (IllegalArgumentException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -192,8 +207,10 @@ public class Serializer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		System.out.println(Deserializer.deserialize(buf, new ArrayList<String>() {}));
-
+		
+		Message outMessage = Deserializer.deserialize(buf, message.getClass());
+		System.out.println(outMessage.getHeader());
+		System.out.println(outMessage.getHeader().getOpCode());
+		System.out.println(outMessage.getBody());
 	}
 }

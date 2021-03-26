@@ -13,6 +13,10 @@ public class MakeBookingRespBody extends RespBody {
 	
 	public UUID payload;
 
+	public MakeBookingRespBody() {
+		super();
+	}
+	
 	/**
 	 * @param errorMessage
 	 */

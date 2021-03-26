@@ -11,6 +11,10 @@ public class MakeBookingReqBody extends Body {
 	public Time startTime;
 	public Time endTime;
 
+	public MakeBookingReqBody() {
+		super();
+	}
+	
 	public MakeBookingReqBody(String facilityID, Day day, Time startTime, Time endTime) {
 		super();
 		this.facilityID = facilityID;
