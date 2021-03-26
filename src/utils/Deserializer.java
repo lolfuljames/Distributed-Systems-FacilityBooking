@@ -214,6 +214,14 @@ public class Deserializer {
 		int opCode = ((Message) obj).getHeader().getOpCode();
 		int messageType = ((Message) obj).getHeader().messageType;
 		
+		if(messageType == 0) {
+			switch(opCode) {
+			case 0:
+				
+			}
+		} else {
+			
+		}
 		return null;
 	}
 
