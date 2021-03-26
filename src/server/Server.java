@@ -2,41 +2,36 @@
  * 
  */
 package server;
-
 import java.net.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
 import utils.*;
+import java.rmi.RemoteException;
+import java.time.Instant;
 
 /**
  * @author jame0019
  *
  */
-public class Server {
-
-	/**
-	 * 
-	 */
+public class Server implements CallbackServer{
+	
 	private DatagramSocket socket;
-
-	private LinkedHashMap<String, LinkedHashMap<String, Facility>> facilities;
-	private LinkedHashMap<UUID, Booking> bookings;
-
-	public Server(int port) throws SocketException {
+	private List<MonitorCallback> callbacks;
+	  private LinkedHashMap<String, LinkedHashMap<String, Facility>> facilities;
+	  private LinkedHashMap<UUID, Booking> bookings;
+	  private long time_seconds = Instant.now().getEpochSecond();
+	  
+	  public Server(int port) throws SocketException {
+	    System.out.println("Initialising the socket for server..." + port);
 		this.facilities = this.generateFacilities();
 		this.bookings = new LinkedHashMap<UUID, Booking>();
-		this.generateRandomBookings();
+//		this.generateRandomBookings();
+		this.callbacks = new ArrayList<>();
+	    socket = new DatagramSocket(port);
+	  }
 
-		System.out.println("Initialising the socket for server..." + port);
-		socket = new DatagramSocket(port);
-	}
-
-	private void close() {
-		socket.close();
-	}
-
-	private void service() throws IOException {
+	private void service() throws IOException, ClassNotFoundException, RemoteException {
 		System.out.println("Servicing the requests...");
 		while (true) {
 			byte[] buffer = new byte[1000];
@@ -50,26 +45,34 @@ public class Server {
 			int opCode = requestMessage.getHeader().getOpCode();
 
 			Message responseMessage = null;
-			Body reqBody = null;
+			Body reqBody = requestMessage.getBody();
 			Body respBody = null;
 			Header header = null;
 			
+		    InetAddress clientAddr = request.getAddress();
+		    int clientPort = request.getPort();
+		    
 			switch (opCode) {
 			case 0:
-				reqBody = requestMessage.getBody();
-				respBody = this.serviceQueryAvailability((QueryAvailabilityReqBody) reqBody);
+				respBody = this.handleQueryAvailability((QueryAvailabilityReqBody) reqBody);
 				header = new Header(UUID.randomUUID(), opCode, 1);
 				responseMessage = new Message(header, respBody);
 				break;
 			case 1:
-				reqBody = requestMessage.getBody();
-				respBody = this.serviceMakeBooking((MakeBookingReqBody) reqBody);
+				respBody = this.handleMakeBooking((MakeBookingReqBody) reqBody);
 				header = new Header(UUID.randomUUID(), opCode, 1);
 				responseMessage = new Message(header, respBody);
 				break;
 			case 2:
+				handleAmendBooking((AmendBookingReqBody) reqBody);
+
 				break;
 			case 3:
+			    handleCallback((MonitorAvailabilityReqBody) reqBody, clientAddr, clientPort);
+			    while (callbacks.size() > 0) {
+				    updateMonitorInterval();
+				    notifyAllCallbacks("Received with thanks");
+			    }
 				break;
 			}
 
@@ -77,35 +80,158 @@ public class Server {
 //			server.send(buf);
 			System.out.println("Received: " + new String(request.getData()));
 
-			// get client ip address and port
-			InetAddress clientAddr = request.getAddress();
-			int clientPort = request.getPort();
 
 			// prepare the datagram packet to response
 			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 			socket.send(response);
 
-			this.testQueryAvailability();
+//			this.testCallback(request);
+//			this.testQueryAvailability();
 //			this.testMakeBooking();
 //			this.testAmendBooking();
 		}
 	}
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		int port = 12359;
-		Server server = null;
-		try {
-			server = new Server(port);
-			server.service();
-		} catch (SocketException ex) {
-			System.out.println("Socket error: " + ex.getMessage());
-		} catch (IOException ex) {
-			System.out.println("I/O error: " + ex.getMessage());
-		}
-	}
+
+	  public static void main(String[] args){
+		    int port = 2222;
+
+		    try {
+		      Server server = new Server(port);
+		      server.service();
+		    } catch (SocketException ex) {
+		      System.out.println("Socket error: " + ex.getMessage());
+		    } catch (IOException ex) {
+		      System.out.println("I/O error: " + ex.getMessage());
+		    } catch (ClassNotFoundException ex) {
+		    	System.out.println("Class not found error: " + ex.getMessage());
+		    }
+	  }
+		/**
+		 * 
+		 * Main callback handler, logs client's IP and port.
+		 * @param request - DatagramPacket sent from client.
+		 * @throws IOException - Unable to reach client.
+		 */
+	  public void handleCallback(MonitorAvailabilityReqBody reqBody, InetAddress clientAddr, int clientPort) throws IOException, ClassNotFoundException {
+	      // parse inputstream
+          MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
+          newCallback.setAddress(clientAddr);
+          newCallback.setPort(clientPort);
+	      addCallback(newCallback);
+	  }
+	  
+	  public AmendBookingRespBody handleAmendBooking(AmendBookingReqBody reqBody) {
+		  UUID bookingID = reqBody.getBookingID();
+		  int offset = reqBody.getOffset();
+		  int statusCode = amendBooking(bookingID, offset);
+		  
+		  if (statusCode == 0) {
+			  return new AmendBookingRespBody(null);
+		  } else if (statusCode == 1) {
+			  return new AmendBookingRespBody("The timeslot is not available!");
+		  } else if (statusCode == 2) {
+			  return new AmendBookingRespBody("The timeslot spans across two different days!");
+		  } else if (statusCode == 3) {
+			  return new AmendBookingRespBody("The timeslot exceeds our operating hours!");
+		  } else if (statusCode == 4) {
+			  return new AmendBookingRespBody("Invalid UUID");
+		  } else return new AmendBookingRespBody("Unexpected Error Occured!");
+	  }
+	  
+	  public void getBooking() {}
+	  
+		/**
+		 * 
+		 * Handler to add callback to registered list, sends ACK to client.
+		 * @param callback - MonitorCallback object sent from client.
+		 * @throws IOException - Unable to reach client.
+		 */
+	  public void addCallback(MonitorCallback callback) throws IOException {
+		  byte[] buffer = "ACK_CALLBACK".getBytes();
+//		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
+		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+		  socket.send(reply);
+		  callbacks.add(callback);
+	  }
+	  
+		/**
+		 * 
+		 * Handler to remove callback from registered list,
+		 * sends EXPIRED_CALLBACK to client.
+		 * @param callback - MonitorCallback object to be removed.
+		 * @throws IOException - Unable to reach client.
+		 */
+	  public void removeCallback(MonitorCallback callback) throws IOException {
+		  byte[] buffer = "EXPIRED_CALLBACK".getBytes();
+//		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
+		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+		  socket.send(reply);
+		  callbacks.remove(callback);
+	  }
+	  
+		/**
+		 * 
+		 * Handler for sending messages to client.
+		 * @param callback - MonitorCallback object of the registered client.
+		 * @param message - message to be sent
+		 * @throws IOException - Unable to reach client.
+		 */
+	  private void notifyCallback(MonitorCallback callback, String message) throws IOException {
+			message = message + "\n" + "facility: " + callback.getMonitorFacilityType() + " timeleft: " + callback.getMonitorInterval();
+		  	byte[] buffer = message.getBytes();
+			DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
+			socket.send(reply);
+		};
+	
+		
+		/**
+		 * 
+		 * Handler for sending messages to all clients.
+		 * @param message - message to be sent
+		 * @throws IOException - Unable to reach client.
+		 */
+	  private void notifyAllCallbacks(String message) throws RemoteException {
+		  callbacks.forEach(callback -> {
+			  try {
+				  notifyCallback(callback, message);
+			  }
+			  catch (RemoteException re) {
+				  re.printStackTrace();
+			  } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		  });
+	  }
+	  
+	  
+		/**
+		 * When a minute has passed since last update, 
+		 * Decrease monitor interval and remove expired callbacks.
+		 */
+	  private void updateMonitorInterval() {
+		  long current_time = Instant.now().getEpochSecond();
+		  if ((current_time - this.time_seconds) < 10) {
+			  return;
+		  }
+		  this.time_seconds = current_time;
+		  List<MonitorCallback> expiredCallbacks = new ArrayList<>();
+		  callbacks.forEach(callback -> {
+			  callback.setMonitorInterval(callback.getMonitorInterval()-1);
+			  if (callback.getMonitorInterval() == 0) {
+				  expiredCallbacks.add(callback);
+			  }
+		  });
+		  expiredCallbacks.forEach(callback -> {
+			  try {
+				  removeCallback(callback);
+			  }
+			  catch (IOException re) {
+				  throw new RuntimeException(re);
+			  }
+		  });
+	  }
 
 	/**
 	 * 
@@ -146,7 +272,7 @@ public class Server {
 		return availableTiming;
 	}
 	
-	private RespBody serviceMakeBooking(MakeBookingReqBody reqBody) {
+	private RespBody handleMakeBooking(MakeBookingReqBody reqBody) {
 		String facilityID = reqBody.getFacilityID();
 		String facilityName = facilityID.split("-", 1)[0];
 		Day day = reqBody.getDay();
@@ -167,7 +293,7 @@ public class Server {
 		return respBody;
 	}
 
-	private RespBody serviceQueryAvailability(QueryAvailabilityReqBody reqBody) {
+	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
 		String facilityName = reqBody.getFacilityName();
 		String res = "";
@@ -222,7 +348,7 @@ public class Server {
 	/**
 	 * Booking amendment service
 	 * 
-	 * @param uuid - the confirmation id for the booking.
+	 * @param bookingID - the confirmation id for the booking.
 	 * @param offset - the offset to be moved for the booking. (in minutes)
 	 * @return statusCode:
 	 * 		0 -> Successful
@@ -231,12 +357,12 @@ public class Server {
 	 * 		3 -> Not successful (amendment is not acceptable, only amendment within the operating hours of the facility is accepted)
 	 * 		4 -> Booking does not exist
 	 */
-	private int amendBooking(UUID uuid, int offset) {
-		if (!this.bookings.containsKey(uuid)) {
+	private int amendBooking(UUID bookingID, int offset) {
+		if (!this.bookings.containsKey(bookingID)) {
 			return 4;
 		}
 
-		Booking booking = this.bookings.get(uuid);
+		Booking booking = this.bookings.get(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
 		return facility.amendBooking(booking, offset);
 	}
@@ -297,7 +423,15 @@ public class Server {
 	}
 	
 	private String res = "";
-
+	
+//	private void testCallback(DatagramPacket request) throws ClassNotFoundException, IOException {
+//	    handleCallback(request);
+//	    while (callbacks.size() > 0) {
+//		    updateMonitorInterval();
+//		    notifyAllCallbacks("Received with thanks");
+//	    }
+//	}
+	
 	private void testQueryAvailability() {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
@@ -376,7 +510,6 @@ public class Server {
 			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
 		}
 	}
-
 }
 
 
