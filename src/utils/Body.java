@@ -7,15 +7,12 @@ package utils;
  * @author c170011
  *
  */
-public class Body {
-	
-	public String errorMessage;
+public abstract class Body {
 
 	/**
 	 * 
 	 */
-	public Body(String errorMessage) {
-		this.errorMessage = errorMessage;
+	public Body() {
 		// TODO Auto-generated constructor stub
 	}
 
