@@ -6,7 +6,7 @@ package server;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
 
 /**
  * @author c170011
@@ -18,7 +18,7 @@ public class Facility {
 	private String facilityID;
 	private Time earliestTime;
 	private Time latestTime;
-	private Hashtable<Day, ArrayList<Booking>> bookings;
+	private LinkedHashMap<Day, ArrayList<Booking>> bookings;
 
 	/**
 	 * 
@@ -29,7 +29,7 @@ public class Facility {
 		this.facilityID = facilityID;
 		this.earliestTime = earliestTime;
 		this.latestTime = latestTime;
-		this.bookings = new Hashtable<Day, ArrayList<Booking>>();
+		this.bookings = new LinkedHashMap<Day, ArrayList<Booking>>();
 		Arrays.asList(Day.values()).forEach(day -> {
 			this.bookings.put(day, new ArrayList<Booking>());
 		});
@@ -43,12 +43,12 @@ public class Facility {
 		return this.facilityID;
 	}
 
-	public Hashtable<Day, ArrayList<Booking>> getBookings() {
+	public LinkedHashMap<Day, ArrayList<Booking>> getBookings() {
 		return this.bookings;
 	}
 
-	public Hashtable<Day, ArrayList<TimePeriod>> getAvailableTiming(ArrayList<Day> days) {
-		Hashtable<Day, ArrayList<TimePeriod>> availableTiming = new Hashtable<Day, ArrayList<TimePeriod>>();
+	public LinkedHashMap<Day, ArrayList<TimePeriod>> getAvailableTiming(ArrayList<Day> days) {
+		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = new LinkedHashMap<Day, ArrayList<TimePeriod>>();
 		days.forEach(day -> {
 			availableTiming.put(day, this._getAvailableTiming(day));
 		});

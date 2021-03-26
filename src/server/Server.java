@@ -19,12 +19,12 @@ public class Server {
 	 */
 	private DatagramSocket socket;
 
-	private Hashtable<String, Hashtable<String, Facility>> facilities;
-	private Hashtable<UUID, Booking> bookings;
+	private LinkedHashMap<String, LinkedHashMap<String, Facility>> facilities;
+	private LinkedHashMap<UUID, Booking> bookings;
 
 	public Server(int port) throws SocketException {
 		this.facilities = this.generateFacilities();
-		this.bookings = new Hashtable<UUID, Booking>();
+		this.bookings = new LinkedHashMap<UUID, Booking>();
 		this.generateRandomBookings();
 
 		System.out.println("Initialising the socket for server..." + port);
@@ -93,19 +93,19 @@ public class Server {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
+	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityName)) {
 			throw new UnknownFacilityException();
 		}
-		Hashtable<String, Facility> facilityList = this.facilities.get(facilityName);
-		Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availableTiming = new Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>>();
+		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityName);
+		LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = new LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>>();
 
 		facilityList.forEach((facilityID, facility) -> {
-			Hashtable<Day, ArrayList<TimePeriod>> aTime = facility.getAvailableTiming(days);
+			LinkedHashMap<Day, ArrayList<TimePeriod>> aTime = facility.getAvailableTiming(days);
 			aTime.forEach((day, timePeriods) -> {
 				if (!availableTiming.containsKey(day)) {
-					availableTiming.put(day, new Hashtable<String, ArrayList<TimePeriod>>());
+					availableTiming.put(day, new LinkedHashMap<String, ArrayList<TimePeriod>>());
 				}
 				availableTiming.get(day).put(facilityID, timePeriods);
 			});
@@ -115,14 +115,14 @@ public class Server {
 	}
 	
 	private String serviceQueryAvailability(String facilityName, ArrayList<Day> days) {
-		String res = null;
+		String res = "";
 		try {
-			Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
+			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this.queryAvailability(facilityName, days);
 			res += String.format("Availability for %s:\n", facilityName);
-			for (Entry<Day, Hashtable<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
 				res += String.format("%s:\n", entry.getKey());
 				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-					System.out.println(e.getKey());
+//					System.out.println(e.getKey());
 					for (TimePeriod timePeriod : e.getValue()) {
 						res += String.format("%s: %s - %s\n", e.getKey().toString(), timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
 					}
@@ -197,11 +197,11 @@ public class Server {
 	 * 		}
 	 * }
 	 */
-	private Hashtable<String, Hashtable<String, Facility>> generateFacilities() {
-		Hashtable<String, Hashtable<String, Facility>> facilities = new Hashtable<String, Hashtable<String, Facility>>();
-		facilities.put("Lecture Hall", new Hashtable<String, Facility>());
-		facilities.put("Tutorial Room", new Hashtable<String, Facility>());
-		facilities.put("Lab", new Hashtable<String, Facility>());
+	private LinkedHashMap<String, LinkedHashMap<String, Facility>> generateFacilities() {
+		LinkedHashMap<String, LinkedHashMap<String, Facility>> facilities = new LinkedHashMap<String, LinkedHashMap<String, Facility>>();
+		facilities.put("Lecture Hall", new LinkedHashMap<String, Facility>());
+		facilities.put("Tutorial Room", new LinkedHashMap<String, Facility>());
+		facilities.put("Lab", new LinkedHashMap<String, Facility>());
 		try {
 			for (int i = 1; i < 6; i++) {
 				facilities.get("Lecture Hall").put(String.format("LT-%d", i), new Facility("Lecture Hall", String.format("LT-%d", i), new Time(8, 0), new Time(17, 0)));
@@ -246,26 +246,26 @@ public class Server {
 		days.add(Day.MONDAY);
 		days.add(Day.TUESDAY);
 		String facilityName = "Lecture Hall";
-		try {
-			Hashtable<Day, Hashtable<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
-					days);
-
-
-			System.out.println("Availability for Lecture Hall:");
-			availability.forEach((day, innerHashtable) -> {
-				this.res += "";
-				System.out.println(day + ": ");
-				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
-					availableTimePeriods.forEach(timePeriod -> {
-						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
-								+ timePeriod.getEndTime().toString());
-					});
-				});
-				System.out.println("--------------------------------------------");
-			});
-		} catch (UnknownFacilityException e) {
-			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
-		}
+//		try {
+//			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
+//					days);
+//
+//
+//			System.out.println("Availability for Lecture Hall:");
+//			availability.forEach((day, innerHashtable) -> {
+//				this.res += "";
+//				System.out.println(day + ": ");
+//				innerHashtable.forEach((facilityID, availableTimePeriods) -> {
+//					availableTimePeriods.forEach(timePeriod -> {
+//						System.out.println(facilityID.toString() + ": " + timePeriod.getStartTime().toString() + " - "
+//								+ timePeriod.getEndTime().toString());
+//					});
+//				});
+//				System.out.println("--------------------------------------------");
+//			});
+//		} catch (UnknownFacilityException e) {
+//			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+//		}
 		System.out.println(this.serviceQueryAvailability(facilityName, days));
 	}
 
