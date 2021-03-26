@@ -164,22 +164,21 @@ public class Serializer {
 //		days = Deserializer.deserialize(buf, new ArrayList<Day>() {});
 //		System.out.println(days);
 
-		Company company = new Company();
-
-		System.out.println("abc");
-		System.out.println(company.getEmployeeNames());
-		try {
-			buf = Serializer.serialize(company, buf);
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(buf);
-		Company outCom = Deserializer.deserialize(buf, Company.class);
-		System.out.println(outCom.getEmployeeNames());
+//		Company company = new Company();
+//		System.out.println("abc");
+//		System.out.println(company.getEmployeeNames());
+//		try {
+//			buf = Serializer.serialize(company, buf);
+//		} catch (IllegalArgumentException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IllegalAccessException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		System.out.println(buf);
+//		Company outCom = Deserializer.deserialize(buf, Company.class);
+//		System.out.println(outCom.getEmployeeNames());
 
 		ArrayList<String> facilities = new ArrayList<String>();
 		facilities.add("Lecture Theatre");
