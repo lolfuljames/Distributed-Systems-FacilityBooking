@@ -24,5 +24,9 @@ public class Header {
 		this.messageType = messageType;
 		// TODO Auto-generated constructor stub
 	}
+	
+	public int getOpCode() {
+		return this.opCode;
+	}
 
 }
