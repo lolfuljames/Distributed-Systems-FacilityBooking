@@ -10,7 +10,7 @@ import java.rmi.RemoteException;
  * @author jame0019
  *
  */
-public interface CallbackServer extends Remote{
+public interface CallbackServer extends Remote {
 
 	/**
 	 * @return 

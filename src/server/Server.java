@@ -7,18 +7,17 @@ import java.util.*;
 import java.io.*;
 import util.*;
 import java.rmi.RemoteException;
+import java.time.Instant;
 
 /**
  * @author jame0019
  *
  */
 public class Server implements CallbackServer{
-	/**
-	 * 
-	 */
+	
 	  private DatagramSocket socket;
 	  private List<MonitorCallback> callbacks = new ArrayList<>();
-
+	  private long time_seconds = Instant.now().getEpochSecond();
 	  public Server(int port) throws SocketException {
 	    System.out.println("Initialising the socket for server..." + port);
 	    socket = new DatagramSocket(port);
@@ -98,7 +97,8 @@ public class Server implements CallbackServer{
 		 * @throws IOException - Unable to reach client.
 		 */
 	  public void addCallback(MonitorCallback callback) throws IOException {
-		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
+		  byte[] buffer = "ACK_CALLBACK".getBytes();
+//		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
 		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
 		  socket.send(reply);
 		  callbacks.add(callback);
@@ -112,7 +112,8 @@ public class Server implements CallbackServer{
 		 * @throws IOException - Unable to reach client.
 		 */
 	  public void removeCallback(MonitorCallback callback) throws IOException {
-		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
+		  byte[] buffer = "EXPIRED_CALLBACK".getBytes();
+//		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
 		  DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
 		  socket.send(reply);
 		  callbacks.remove(callback);
@@ -155,10 +156,15 @@ public class Server implements CallbackServer{
 	  
 	  
 		/**
-		 * 
-		 * -1 day simulator, removes if days left is 0.
+		 * When a minute has passed since last update, 
+		 * Decrease monitor interval and remove expired callbacks.
 		 */
 	  private void updateMonitorInterval() {
+		  long current_time = Instant.now().getEpochSecond();
+		  if ((current_time - this.time_seconds) < 10) {
+			  return;
+		  }
+		  this.time_seconds = current_time;
 		  List<MonitorCallback> expiredCallbacks = new ArrayList<>();
 		  callbacks.forEach(callback -> {
 			  callback.setMonitorInterval(callback.getMonitorInterval()-1);

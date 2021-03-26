@@ -62,8 +62,8 @@ public class Client {
 			return;
 		}
 		console("Which facility would you like to be notified of? (Enter 0 to exit)");
-		int facilityID = scanner.nextInt(); scanner.nextLine();
-		if (facilityID == 0) {
+		String facilityID = scanner.nextLine();
+		if (facilityID == "0") {
 			return;
 		}
 		console("Please enter duration of subscription. (Enter 0 to exit)");
@@ -100,7 +100,8 @@ public class Client {
 		socket.setSoTimeout(1000);
 
 //		check for acknowledgment on callback
-		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
+		while (!(new String(reply.getData()).trim()).equals("ACK_CALLBACK")) {
+//		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
 			socket.send(request);
 			buffer = new byte[1000];
 			reply = new DatagramPacket(buffer, buffer.length);
@@ -112,7 +113,8 @@ public class Client {
 		reply = new DatagramPacket(buffer, buffer.length);
 		socket.receive(reply);
 		socket.setSoTimeout(7 * 24 * 60 * 1000);
-		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
+		while (!(new String(reply.getData()).trim()).equals("EXPIRED_CALLBACK")) {
+//		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
 			System.out.println("Reply: " + new String(reply.getData()));
 			buffer = new byte[1000];
 			reply = new DatagramPacket(buffer, buffer.length);
