@@ -77,10 +77,11 @@ public class Server implements CallbackServer{
 //			server.send(buf);
 			System.out.println("Received: " + new String(request.getData()));
 
-
+//          Legacy code
+//			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
+//			socket.send(response);
+			
 			// prepare the datagram packet to response
-			DatagramPacket responseMessage = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
-			socket.send(response);
 //			sendMessage(Message responseMessage, InetAddress clientAddr, int clientPort);
 
 //			this.testCallback(request);
@@ -182,12 +183,19 @@ public class Server implements CallbackServer{
 		 * @param callback - MonitorCallback object of the registered client.
 		 * @param message - message to be sent
 		 * @throws IOException - Unable to reach client.
+		 * TODO - uncomment sendMessage when serializer is ready.
 		 */
 	  private void notifyCallback(MonitorCallback callback, String message) throws IOException {
-			message = message + "\n" + "facility: " + callback.getMonitorFacilityType() + " timeleft: " + callback.getMonitorInterval();
-		  	byte[] buffer = message.getBytes();
-			DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
-			socket.send(reply);
+		    RespBody respBody;
+		    Header header;
+		    Message respMessage;
+		    
+		    message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
+		    respBody = new MonitorAvailabilityRespBody(null, message);
+		    header = new Header(UUID.randomUUID(), 3, 1);
+		    respMessage = new Message(header, respBody);
+		    
+//		    sendMessage(respMessage, callback.getAddress(), callback.getPort());
 		};
 	
 		
