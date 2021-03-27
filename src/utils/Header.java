@@ -13,6 +13,12 @@ public class Header {
 	
 	public UUID messageID;
 	public int opCode;
+	
+	/**
+	 * Indicator of request/response:
+	 * 0 -> Request
+	 * 1 -> Response
+	 */
 	public int messageType;
 
 	/**
