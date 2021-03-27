@@ -3,6 +3,7 @@
  */
 package server;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
@@ -34,13 +35,9 @@ public class Server implements CallbackServer{
 	private void service() throws IOException, ClassNotFoundException, RemoteException {
 		System.out.println("Servicing the requests...");
 		while (true) {
-			byte[] buffer = new byte[1000];
-			DatagramPacket request = new DatagramPacket(buffer, buffer.length);
-			socket.receive(request);
-
-			// Do whatever is required here, process data etc
-			// deserialization
-//			 Message message = deserialize(buffer, Message.class);
+			DatagramPacket request = receivePacket();
+//			Message requestMessage = Deserializer.deserialize(request.getData(), Message.class);
+			
 			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1), new MakeBookingRespBody("", UUID.randomUUID()));
 			int opCode = requestMessage.getHeader().getOpCode();
 
@@ -82,8 +79,9 @@ public class Server implements CallbackServer{
 
 
 			// prepare the datagram packet to response
-			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
+			DatagramPacket responseMessage = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 			socket.send(response);
+//			sendMessage(Message responseMessage, InetAddress clientAddr, int clientPort);
 
 //			this.testCallback(request);
 //			this.testQueryAvailability();
@@ -112,31 +110,39 @@ public class Server implements CallbackServer{
 		 * Main callback handler, logs client's IP and port.
 		 * @param request - DatagramPacket sent from client.
 		 * @throws IOException - Unable to reach client.
+		 * @return respBody - Response Body with message:ACK error:null.
 		 */
-	  public void handleCallback(MonitorAvailabilityReqBody reqBody, InetAddress clientAddr, int clientPort) throws IOException, ClassNotFoundException {
-	      // parse inputstream
+	  public RespBody handleCallback(MonitorAvailabilityReqBody reqBody, InetAddress clientAddr, int clientPort) throws IOException, ClassNotFoundException {
+		  String payload = "ACK_CALLBACK";
+		  String errorMessage = null;
           MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
           newCallback.setAddress(clientAddr);
           newCallback.setPort(clientPort);
 	      addCallback(newCallback);
+	      
+	      RespBody respBody = new MonitorAvailabilityRespBody(errorMessage, payload);
+	      return respBody;
 	  }
 	  
-	  public AmendBookingRespBody handleAmendBooking(AmendBookingReqBody reqBody) {
+	  public RespBody handleAmendBooking(AmendBookingReqBody reqBody) {
 		  UUID bookingID = reqBody.getBookingID();
 		  int offset = reqBody.getOffset();
 		  int statusCode = amendBooking(bookingID, offset);
-		  
+		  String errorMessage; 
 		  if (statusCode == 0) {
-			  return new AmendBookingRespBody(null);
+			  errorMessage = null;
 		  } else if (statusCode == 1) {
-			  return new AmendBookingRespBody("The timeslot is not available!");
+			  errorMessage = "The timeslot is not available!";
 		  } else if (statusCode == 2) {
-			  return new AmendBookingRespBody("The timeslot spans across two different days!");
+			  errorMessage = "The timeslot spans across two different days!";
 		  } else if (statusCode == 3) {
-			  return new AmendBookingRespBody("The timeslot exceeds our operating hours!");
+			  errorMessage = "The timeslot exceeds our operating hours!";
 		  } else if (statusCode == 4) {
-			  return new AmendBookingRespBody("Invalid UUID");
-		  } else return new AmendBookingRespBody("Unexpected Error Occured!");
+			  errorMessage = "Invalid UUID";
+		  } else errorMessage = "Unexpected Error Occured!";
+		  
+		  RespBody respBody = new AmendBookingRespBody(errorMessage);
+		  return respBody;
 	  }
 	  
 	  public void getBooking() {}
@@ -509,6 +515,20 @@ public class Server implements CallbackServer{
 		} catch (UnknownFacilityException e) {
 			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
 		}
+	}
+	
+//	private void sendMessage(Message message, InetAddress clientAddr, int clientPort) throws IOException {
+//		ByteBuffer buf = ByteBuffer.allocate(2048);
+//		buf = Serializer.serialize(message, buf);
+//		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
+//		socket.send(response);
+//	}
+	
+	private DatagramPacket receivePacket() throws IOException {
+		byte[] buf = new byte[1000];
+		DatagramPacket request = new DatagramPacket(buf, buf.length);
+		socket.receive(request);
+		return request;
 	}
 }
 
