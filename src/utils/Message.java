@@ -36,5 +36,12 @@ public class Message {
 	public void setHeader(Header header) {
 		this.header = header;
 	}
+	
+	public String toString() {
+		String str = "";
+		str += this.getHeader().toString();
+		str += this.getBody().toString();
+		return str;
+	}
 
 }

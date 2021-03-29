@@ -29,4 +29,11 @@ public class AmendBookingReqBody extends Body {
 	public void setOffset(int offset) {
 		this.offset = offset;
 	}
+	
+	public String toString() {
+		String str = "";
+		str += String.format("Booking ID: %s\n", this.getBookingID().toString());
+		str += String.format("Offset in minute: %d\n", this.getOffset());
+		return str;
+	}
 }

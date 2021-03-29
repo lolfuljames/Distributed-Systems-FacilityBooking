@@ -75,5 +75,14 @@ public class MakeBookingReqBody extends Body {
 	public void setEndTime(Time endTime) {
 		this.endTime = endTime;
 	}
+	
+	public String toString() {
+		String str = "";
+		str += String.format("Facility ID: %s\n", this.getFacilityID());
+		str += String.format("Day of booking: %s\n", this.getDay().toString());
+		str += String.format("Start time: %s\n", this.getStartTime().toString());
+		str += String.format("End time: %s\n", this.getEndTime().toString());
+		return str;
+	}
 
 }

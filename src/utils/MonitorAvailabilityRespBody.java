@@ -17,5 +17,11 @@ public class MonitorAvailabilityRespBody extends RespBody {
 	public void setPayload(String payload) {
 		this.payload = payload;
 	}
+	
+	public String toString() {
+		String str = super.toString();
+		str += String.format("Payload: %s\n", this.getPayload());
+		return str;
+	}
 
 }

@@ -21,5 +21,15 @@ public class MakeBookingRespBody extends RespBody {
 		this.bookingID = bookingID;
 		// TODO Auto-generated constructor stub
 	}
+	
+	public UUID getBookingID() {
+		return this.bookingID;
+	}
+	
+	public String toString() {
+		String str = super.toString();
+		str += String.format("Booking ID: %s\n", this.getBookingID().toString());
+		return str;
+	}
 
 }
