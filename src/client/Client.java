@@ -19,8 +19,6 @@ public class Client {
 	private DatagramSocket socket = null;
 	private int serverPort = 2222;
 	private Scanner scanner = new Scanner(System.in);
-	private int semanticMode;
-
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -34,17 +32,6 @@ public class Client {
 		System.out.println("Address: " + serverAddress.getHostAddress());
 		socket = new DatagramSocket();
 		String inputStr;
-		
-		console("Welcome to the NTU Facility Booking System!\n" + "0 - at-most-once\n" + "1 - at-least-once\n"
-				+ "Please enter your preferred sementic mode: ");
-		inputStr = scanner.nextLine();
-		try {
-			semanticMode = Integer.parseInt(inputStr);
-		} catch (NumberFormatException ne) {
-			console("Invalid semantic selected! Press enter to continue...");
-			scanner.nextLine();
-			return;
-		}
 		while (true) {
 			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
 					+ "1 - Book Facility\n" + "2 - Amend Existing Bookings\n" + "3 - Monitor Facility Bookings\n"
