@@ -95,7 +95,7 @@ public class Server implements CallbackServer {
 
 				break;
 			case 3:
-				respBody = handleCallback((MonitorAvailabilityReqBody) reqBody, clientAddr, clientPort);
+				respBody = handleCallback((MonitorAvailabilityReqBody) reqBody);
 //			    while (callbacks.size() > 0) {
 //				    updateMonitorInterval();
 //				    notifyAllCallbacks("Received with thanks");
@@ -181,13 +181,11 @@ public class Server implements CallbackServer {
 	 * @throws IOException - Unable to reach client.
 	 * @return respBody - Response Body with message:ACK error:null.
 	 */
-	public RespBody handleCallback(MonitorAvailabilityReqBody reqBody, InetAddress clientAddr, int clientPort)
+	public RespBody handleCallback(MonitorAvailabilityReqBody reqBody)
 			throws IOException, ClassNotFoundException {
 		String payload = "ACK_CALLBACK";
 		String errorMessage = null;
 		MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
-		newCallback.setAddress(clientAddr);
-		newCallback.setPort(clientPort);
 		addCallback(newCallback);
 
 		RespBody respBody = new MonitorAvailabilityRespBody(errorMessage, payload);

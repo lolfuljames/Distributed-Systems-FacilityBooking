@@ -24,6 +24,8 @@ public class Client {
 	private DatagramSocket socket = null;
 	private int serverPort = 2222;
 	private Scanner scanner = new Scanner(System.in);
+	private InetAddress clientAddress;
+	private int clientPort;
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -39,6 +41,8 @@ public class Client {
 		serverAddress = InetAddress.getByName(serverHostname);
 		System.out.println("Address: " + serverAddress.getHostAddress());
 		socket = new DatagramSocket();
+		clientAddress = InetAddress.getLocalHost();
+		clientPort = socket.getLocalPort();
 		String inputStr;
 		while (true) {
 			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
@@ -61,7 +65,7 @@ public class Client {
 				Message requestMessage = new Message(new Header(UUID.randomUUID(), 1, 0),
 						new MakeBookingReqBody("LT-1", Day.MONDAY, new Time(9, 0), new Time(12, 0)));
 				sendMessage(requestMessage, this.serverAddress, this.serverPort);
-				DatagramPacket packet = receivePacket();
+//				DatagramPacket packet = receivePacket();
 //		    	  makeBooking();
 				break;
 			case 2:
@@ -95,6 +99,8 @@ public class Client {
 		if (facilityType == "0") {
 			return;
 		}
+		
+//		TODO send query 
 		console("Which facility would you like to be notified of? (Enter 0 to exit)");
 		String facilityID = scanner.nextLine();
 		if (facilityID == "0") {
@@ -110,51 +116,58 @@ public class Client {
 			scanner.nextLine();
 			monitorInterval = 10;
 		}
-
-		MonitorCallback callback = new MonitorCallback(facilityType, facilityID, monitorInterval);
-//		sendCallback(callback);
+		
+		
+		MonitorCallback callback = new MonitorCallback(facilityID, monitorInterval, this.clientAddress, this.clientPort);
+//		registerCallback(callback);
 	}
 
 	/**
 	 * 
-	 * Performs sending and acknowledgement checking on callbacks. Waits for
+	 * Performs registering and acknowledgement checking on callbacks. Waits for
 	 * incoming notifications regarding monitored facility, until callback is
 	 * expired.
 	 * 
 	 * @param callback - MonitorCallback object that contains the monitored
 	 *                 facility.
 	 * @throws IOException - Unable to reach server.
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
 	 */
-//	public void sendCallback(MonitorCallback callback) throws IOException {
-//		Message message = new Message(new Header(UUID.randomUUID(), 3, 0), new Body())
-//		sendMessage(, this.serverAddress, this.serverPort);
-//		DatagramPacket test = receiveMessage();
-//
-////		check for acknowledgment on callback
-//		while (!(new String(reply.getData()).trim()).equals("ACK_CALLBACK")) {
-////		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
-//			socket.send(request);
-//			buffer = new byte[1000];
-//			reply = new DatagramPacket(buffer, buffer.length);
-//			socket.receive(reply);
-//		}
-//
-////		7 days timeout
-//		buffer = new byte[1000];
-//		reply = new DatagramPacket(buffer, buffer.length);
-//		socket.receive(reply);
-//		socket.setSoTimeout(7 * 24 * 60 * 1000);
-//		while (!(new String(reply.getData()).trim()).equals("EXPIRED_CALLBACK")) {
-////		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
-//			System.out.println("Reply: " + new String(reply.getData()));
-//			buffer = new byte[1000];
-//			reply = new DatagramPacket(buffer, buffer.length);
-//			socket.receive(reply);
-//		}
-//
-//		System.out.println("End of process...");
-//		return;
-////	}
+	public void registerCallback(MonitorCallback callback) throws IOException, IllegalArgumentException, IllegalAccessException {
+		Header header = new Header(UUID.randomUUID(), 3, 0);
+		Body body = new MonitorAvailabilityReqBody(callback);
+		Message requestMessage = new Message(header, body);
+		Message responseMessage;
+		String data;
+		
+		socket.setSoTimeout(1000);
+//		one second timeout for ack
+//		check for acknowledgment on callback
+		while (true) {
+			sendMessage(requestMessage, serverAddress, serverPort);
+			try {
+				responseMessage = receiveMessage();
+				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
+				if (data.equals("ACK_CALLBACK")) break;
+			} catch (IOException ex) {
+				sendMessage(requestMessage, serverAddress, serverPort);
+			}
+		}
+
+		socket.setSoTimeout(7 * 24 * 60 * 1000);
+//		7 days timeout
+		responseMessage = receiveMessage();
+		data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
+		while (!data.equals("EXPIRED_CALLBACK")) {
+			responseMessage = receiveMessage();
+			data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
+		}
+
+
+		System.out.println("End of process...");
+		return;
+	}
 
 	public void console(String message) {
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n" + message);
@@ -171,11 +184,14 @@ public class Client {
 		socket.send(response);
 	}
 
-	private DatagramPacket receivePacket() throws IOException {
+	private Message receiveMessage() throws IOException {
 		byte[] buf = new byte[2048];
 		DatagramPacket request = new DatagramPacket(buf, buf.length);
 		socket.receive(request);
-		return request;
+		byte[] byteBuffer = request.getData();
+		ByteBuffer buffer = ByteBuffer.wrap(byteBuffer);
+		Message requestMessage = Deserializer.deserialize(buffer, Message.class);
+		return requestMessage;
 	}
 	
 	public static void main(String[] args) {

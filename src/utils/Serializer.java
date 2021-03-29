@@ -109,7 +109,7 @@ public class Serializer {
 		buffer.putLong(uuid.getLeastSignificantBits());
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws UnknownHostException {
 
 		ByteBuffer buf = ByteBuffer.allocate(4096);
 
@@ -234,13 +234,7 @@ public class Serializer {
 		System.out.println("Success");
 		
 		System.out.print("Testing MonitorCallback serialization and deserialization: ");
-		MonitorCallback callback = new MonitorCallback("LT", "LT_1", 5);
-		try {
-			callback.setAddress(InetAddress.getByName("google.com"));
-		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		MonitorCallback callback = new MonitorCallback("LT-1", 5, InetAddress.getByName("google.com"), 2);
 		try {
 			buf = Serializer.serialize(callback, buf);
 		} catch (IllegalArgumentException e) {
@@ -251,9 +245,9 @@ public class Serializer {
 			e.printStackTrace();
 		}
 		MonitorCallback outCallback = Deserializer.deserialize(buf, MonitorCallback.class);
-		assert outCallback.getMonitorFacilityType().equals("LT");
 		assert outCallback.getMonitorInterval() == 5;
-		assert outCallback.getMonitorFacilityID().equals("LT_1");
+		assert outCallback.getMonitorFacilityID().equals("LT-1");
+		assert outCallback.getPort() == 2;
 		System.out.println("Success");
 		System.out.println("Before: " + callback.getAddress().toString());
 		System.out.println("After: " + ((InetAddress) outCallback.getAddress()));

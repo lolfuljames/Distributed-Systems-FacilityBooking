@@ -14,7 +14,6 @@ import java.io.Serializable;
  */
 public class MonitorCallback implements Remote, Serializable {
 
-	private String monitorFacilityType;
 	private String monitorFacilityID;
 	private int monitorInterval;
 	private InetAddress address;
@@ -28,16 +27,12 @@ public class MonitorCallback implements Remote, Serializable {
 		
 	}
 	
-	public MonitorCallback(String facilityType, String monitorFacilityID, int monitorInterval) {
-		this.monitorFacilityType = facilityType;
+	public MonitorCallback( String monitorFacilityID, int monitorInterval, InetAddress address, int port) {
 		this.monitorFacilityID = monitorFacilityID;
 		this.monitorInterval = monitorInterval;
+		this.address = address;
+		this.port = port;
 	}
-	
-	public String getMonitorFacilityType() {
-		return monitorFacilityType;
-	}
-
 	public String getMonitorFacilityID() {
 		return monitorFacilityID;
 	}
