@@ -293,11 +293,26 @@ public class Server implements CallbackServer {
 	 * @param message - message to be sent
 	 * @throws IOException - Unable to reach client.
 	 */
-	private void notifyAllCallbacks(String message, String facilityID) {
+	private void notifyAllCallbacks(Facility facility) {
+		String message = "";
+		ArrayList<Day> allDays = new ArrayList<Day>(List.of(Day.MONDAY, Day.TUESDAY, Day.WEDNESDAY, Day.THURSDAY, Day.FRIDAY, Day.SATURDAY, Day.SUNDAY));
+		LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming;
+		try {
+			availableTiming = this.queryAvailability(facility.getName(), allDays);
+		} catch (UnknownFacilityException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			System.out.println("Notifying callback of unknown facility.. This error should never happen..");
+			return;
+		}
+		message += String.format("Availability for %s:\n", facility.getName());
+		message += _convertTimingsToString(availableTiming);
+		
+		final String callbackMessage = message;
 		callbacks.forEach(callback -> {
-			if (callback.getMonitorFacilityID().equals(facilityID)) {
+			if (callback.getMonitorFacilityID().equals(facility.getFacilityID())) {
 				try {
-					notifyCallback(callback, message);
+					notifyCallback(callback, callbackMessage);
 				} catch (RemoteException re) {
 					re.printStackTrace();
 				} catch (IOException e) {
@@ -403,22 +418,28 @@ public class Server implements CallbackServer {
 			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
 					.queryAvailability(facilityName, days);
 			res += String.format("Availability for %s:\n", facilityName);
-			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
-				res += String.format("%s:\n", entry.getKey());
-				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-					for (TimePeriod timePeriod : e.getValue()) {
-						res += String.format("%s: %s - %s\n", e.getKey().toString(),
-								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
-					}
-				}
-				res += "--------------------------------------------\n";
-			}
+			res += this._convertTimingsToString(availableTiming);
 		} catch (UnknownFacilityException e) {
 			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityName);
 		}
 
 		RespBody respBody = new QueryAvailabilityRespBody(errorMessage, res);
 		return respBody;
+	}
+	
+	private String _convertTimingsToString(LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming) {
+		String res = "";
+		for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+			res += String.format("%s:\n", entry.getKey());
+			for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+				for (TimePeriod timePeriod : e.getValue()) {
+					res += String.format("%s: %s - %s\n", e.getKey().toString(),
+							timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+				}
+			}
+			res += "--------------------------------------------\n";
+		}
+		return res;
 	}
 
 	/**
@@ -441,11 +462,12 @@ public class Server implements CallbackServer {
 		}
 		UUID uuid = null;
 		Booking newBooking = new Booking(facilityName, facilityID, day, startTime, endTime);
-		boolean success = this.facilities.get(facilityName).get(facilityID).addBooking(newBooking);
+		Facility facility = this.facilities.get(facilityName).get(facilityID);
+		boolean success = facility.addBooking(newBooking);
 		if (success) {
 			uuid = newBooking.getUUID();
 			this.bookings.put(uuid, newBooking);
-			notifyAllCallbacks("testMakeBookingAlert", newBooking.getFacilityID());
+			notifyAllCallbacks(facility);
 		}
 		return uuid;
 	}
@@ -471,7 +493,7 @@ public class Server implements CallbackServer {
 		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
 		int statusCode = facility.amendBooking(booking, offset);
 		if (statusCode == 0) {
-			notifyAllCallbacks("test", booking.getFacilityID());
+			notifyAllCallbacks(facility);
 		}
 		return statusCode;
 	}
