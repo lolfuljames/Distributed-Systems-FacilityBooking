@@ -131,7 +131,7 @@ public class Client {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityName));
+				new QueryAvailabilityReqBody(days, null, facilityName, true));
 		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 		Message responseMessage = this.receiveMessage();
 		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
@@ -173,7 +173,7 @@ public class Client {
 		
 		String facilityID = scanner.nextLine().toUpperCase();
 		args.clear();
-		args.add("Please choose the day of interest (Separate day by a white space if querying for multiple days.");
+		args.add("Please choose the day of interest. (Separate day by a white space if querying for multiple days)");
 		Arrays.asList(Day.values()).forEach(day -> {
 			args.add(day.toString());
 		});
@@ -186,7 +186,7 @@ public class Client {
 		}
 		
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityID));
+				new QueryAvailabilityReqBody(days, facilityID, null, false));
 		
 		return requestMessage;
 		

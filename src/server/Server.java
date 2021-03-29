@@ -424,34 +424,37 @@ public class Server implements CallbackServer {
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
 		String facilityID = reqBody.getFacilityID();
+		String facilityName = reqBody.getFacilityName();
+		boolean IDBased = reqBody.getIDBased();
 		String res = "";
 		String errorMessage = null;
 		try {
-//			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
-//					.queryAvailabilityNameBased(facilityName, days);
-//			res += String.format("Availability for %s:\n", facilityName);
-//			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
-//				res += String.format("%s:\n", entry.getKey());
-//				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-//					for (TimePeriod timePeriod : e.getValue()) {
-//						res += String.format("%s: %s - %s\n", e.getKey().toString(),
-//								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
-//					}
-//				}
-//				res += "--------------------------------------------\n";
-//			}
-			
-
-			LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
-					.queryAvailabilityIDBased(facilityID, days);
-			res += String.format("Availability for %s:\n", facilityID);
-			for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
-				res += String.format("%s:\n", entry.getKey());
-				for (TimePeriod timePeriod : entry.getValue()) {
-					res += String.format("%s - %s\n",
-							timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+			if (IDBased) {
+				LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
+						.queryAvailabilityIDBased(facilityID, days);
+				res += String.format("Availability for %s:\n", facilityID);
+				for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
+					res += String.format("%s:\n", entry.getKey());
+					for (TimePeriod timePeriod : entry.getValue()) {
+						res += String.format("%s - %s\n",
+								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+					}
+					res += "--------------------------------------------\n";
 				}
-				res += "--------------------------------------------\n";
+			} else {
+				LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
+						.queryAvailabilityNameBased(facilityName, days);
+				res += String.format("Availability for %s:\n", facilityName);
+				for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+					res += String.format("%s:\n", entry.getKey());
+					for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+						for (TimePeriod timePeriod : e.getValue()) {
+							res += String.format("%s: %s - %s\n", e.getKey().toString(),
+									timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+						}
+					}
+					res += "--------------------------------------------\n";
+				}
 			}
 		} catch (UnknownFacilityException e) {
 			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityID);
