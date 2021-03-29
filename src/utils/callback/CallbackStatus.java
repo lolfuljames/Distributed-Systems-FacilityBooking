@@ -1,4 +1,4 @@
-package utils;
+package utils.callback;
 
 public enum CallbackStatus {
 	ACK_CALLBACK,

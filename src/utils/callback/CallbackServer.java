@@ -1,7 +1,7 @@
 /**
  * 
  */
-package utils;
+package utils.callback;
 
 import java.rmi.Remote;
 import java.io.*;

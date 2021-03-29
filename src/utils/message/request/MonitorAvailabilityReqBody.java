@@ -1,7 +1,9 @@
-package utils;
+package utils.message.request;
 
 import java.util.*;
 import server.*;
+import utils.callback.MonitorCallback;
+import utils.message.Body;
 
 public class MonitorAvailabilityReqBody extends Body {
 

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package utils;
+package utils.message.response;
 
 import java.util.UUID;
 

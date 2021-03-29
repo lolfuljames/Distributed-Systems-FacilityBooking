@@ -1,4 +1,4 @@
-package utils;
+package utils.message.response;
 
 public class QueryAvailabilityRespBody extends RespBody {
 

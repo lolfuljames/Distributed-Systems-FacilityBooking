@@ -1,6 +1,8 @@
-package utils;
+package utils.message.request;
 
 import java.util.UUID;
+
+import utils.message.Body;
 
 public class AmendBookingReqBody extends Body {
 

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package utils;
+package utils.callback;
 
 import java.net.*;
 import java.rmi.Remote;
@@ -25,7 +25,7 @@ public class MonitorCallback implements Remote, Serializable {
 		
 	}
 	
-	public MonitorCallback( String monitorFacilityID, int monitorInterval, InetAddress address, int port) {
+	public MonitorCallback(String monitorFacilityID, int monitorInterval, InetAddress address, int port) {
 		this.monitorFacilityID = monitorFacilityID;
 		this.monitorInterval = monitorInterval;
 		this.address = address;

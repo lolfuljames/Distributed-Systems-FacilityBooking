@@ -1,8 +1,9 @@
-package utils;
+package utils.message.request;
 
 import java.util.UUID;
 
 import server.*;
+import utils.message.Body;
 
 public class MakeBookingReqBody extends Body {
 	

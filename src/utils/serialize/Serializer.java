@@ -1,4 +1,4 @@
-package utils;
+package utils.serialize;
 
 import java.util.*;
 
@@ -11,6 +11,11 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import server.*;
+import utils.callback.MonitorCallback;
+import utils.message.Header;
+import utils.message.Message;
+import utils.message.request.*;
+import utils.message.response.*;
 
 public class Serializer {
 

@@ -1,4 +1,4 @@
-package utils;
+package utils.serialize;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.UUID;
 import java.io.*;
 import server.*;
+import utils.message.Body;
+import utils.message.Message;
+import utils.message.request.*;
+import utils.message.response.*;
 
 public class Deserializer {
 

@@ -1,7 +1,9 @@
 /**
  * 
  */
-package utils;
+package utils.message.response;
+
+import utils.message.Body;
 
 /**
  * @author c170011

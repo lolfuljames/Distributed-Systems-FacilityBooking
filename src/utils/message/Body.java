@@ -1,7 +1,7 @@
 /**
  * 
  */
-package utils;
+package utils.message;
 
 /**
  * @author c170011

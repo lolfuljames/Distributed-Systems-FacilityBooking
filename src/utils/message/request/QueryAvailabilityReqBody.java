@@ -1,7 +1,8 @@
-package utils;
+package utils.message.request;
 
 import java.util.*;
 import server.*;
+import utils.message.Body;
 
 public class QueryAvailabilityReqBody extends Body {
 

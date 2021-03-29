@@ -1,4 +1,4 @@
-package utils;
+package utils.serialize;
 
 public class DeserializationException extends RuntimeException {
 
