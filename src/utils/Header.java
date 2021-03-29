@@ -24,6 +24,9 @@ public class Header {
 	/**
 	 * 
 	 */
+	public Header() {	
+	}
+	
 	public Header(UUID messageID, int opCode, int messageType) {
 		this.messageID = messageID;
 		this.opCode = opCode;

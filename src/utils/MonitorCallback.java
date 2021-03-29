@@ -22,6 +22,9 @@ public class MonitorCallback implements Remote, Serializable {
 	 * @return 
 	 * 
 	 */
+	public MonitorCallback() {
+		
+	}
 	
 	public MonitorCallback(String monitorFacilityID, int monitorInterval) {
 		this.monitorFacilityID = monitorFacilityID;

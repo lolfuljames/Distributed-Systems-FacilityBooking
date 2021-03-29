@@ -29,6 +29,8 @@ public class Time {
 //		return this.day;
 //	}
 	
+	public Time() {}
+	
 	public int getHour() {
 		return this.hour;
 	}

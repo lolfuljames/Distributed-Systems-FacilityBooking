@@ -14,6 +14,10 @@ public class RespBody extends Body {
 	/**
 	 * 
 	 */
+	public RespBody() {
+		
+	}
+	
 	public RespBody(String errorMessage) {
 		this.errorMessage = errorMessage;
 		// TODO Auto-generated constructor stub

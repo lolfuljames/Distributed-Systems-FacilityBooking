@@ -39,7 +39,7 @@ public class Server implements CallbackServer {
 		messageCache = new Hashtable<UUID, CacheMessageObject>();
 	}
 
-	private void service() throws IOException, ClassNotFoundException, RemoteException, TimeErrorException {
+	private void service() throws IOException, ClassNotFoundException, RemoteException, TimeErrorException, IllegalArgumentException, IllegalAccessException {
 		String inputStr;
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to the NTU Facility Booking Service!\n"
 				+ "0 - at-most-once\n" + "1 - at-least-once\n" + "Please enter your preferred sementic mode: ");
@@ -53,15 +53,19 @@ public class Server implements CallbackServer {
 		}
 		System.out.println("Servicing the requests...");
 		while (true) {
+
 			if (semanticMode == 0) {
 				updateCacheTTL();
 			}
 			updateMonitorInterval();
 			DatagramPacket request = receivePacket();
 //			Message requestMessage = Deserializer.deserialize(request.getData(), Message.class);
-
-			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1),
-					new MakeBookingRespBody("", UUID.randomUUID()));
+//
+//			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1),
+//					new MakeBookingRespBody("", UUID.randomUUID()));
+			byte[] byteBuffer = request.getData();
+			ByteBuffer buffer = ByteBuffer.wrap(byteBuffer);
+			Message requestMessage = Deserializer.deserialize(buffer, Message.class);
 			int opCode = requestMessage.getHeader().getOpCode();
 			UUID messageID = requestMessage.getHeader().getMessageID();
 
@@ -76,7 +80,7 @@ public class Server implements CallbackServer {
 //			duplicated client request detected
 			if (this.semanticMode == 0 && messageCache.contains(messageID)) {
 				Message cachedMessage = messageCache.get(messageID).getMessage();
-//				sendMessage(cachedMessage, clientAddr, clientPort);
+				sendMessage(cachedMessage, clientAddr, clientPort);
 				continue;
 			}
 
@@ -115,7 +119,7 @@ public class Server implements CallbackServer {
 //			socket.send(response);
 
 			// prepare the datagram packet to response
-//			sendMessage(Message responseMessage, InetAddress clientAddr, int clientPort);
+			sendMessage(responseMessage, clientAddr, clientPort);
 
 //			this.testCallback(request);
 //			this.testQueryAvailability();
@@ -161,6 +165,12 @@ public class Server implements CallbackServer {
 		} catch (TimeErrorException ex) {
 			// TODO Auto-generated catch block\
 			System.out.println("TimeErrorException occured: " + ex.getMessage());
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -584,15 +594,15 @@ public class Server implements CallbackServer {
 		}
 	}
 
-//	private void sendMessage(Message message, InetAddress clientAddr, int clientPort) throws IOException {
-//		ByteBuffer buf = ByteBuffer.allocate(2048);
-//		buf = Serializer.serialize(message, buf);
-//		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
-//		socket.send(response);
-//	}
+	private void sendMessage(Message message, InetAddress clientAddr, int clientPort) throws IOException, IllegalArgumentException, IllegalAccessException {
+		ByteBuffer buf = ByteBuffer.allocate(2048);
+		buf = Serializer.serialize(message, buf);
+		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
+		socket.send(response);
+	}
 
 	private DatagramPacket receivePacket() throws IOException {
-		byte[] buf = new byte[1000];
+		byte[] buf = new byte[2048];
 		DatagramPacket request = new DatagramPacket(buf, buf.length);
 		socket.receive(request);
 		return request;

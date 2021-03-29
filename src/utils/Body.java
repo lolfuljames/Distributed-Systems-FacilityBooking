@@ -7,7 +7,7 @@ package utils;
  * @author c170011
  *
  */
-public abstract class Body {
+public class Body {
 
 	/**
 	 * 
