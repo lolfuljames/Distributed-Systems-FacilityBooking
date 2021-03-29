@@ -273,6 +273,10 @@ public class Client {
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
 				System.out.println(data);
+				header = new Header(UUID.randomUUID(), 3, 0);
+				body = new MonitorAvailabilityRespBody(null, "ACK_CALLBACK");
+				responseMessage = new Message(header,body);
+				sendMessage(responseMessage, serverAddress, serverPort);
 			}
 		} catch (IOException ex) {
 			console("Monitor Interval has ended... Exiting... (press Enter to continue)");

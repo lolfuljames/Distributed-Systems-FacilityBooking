@@ -265,13 +265,25 @@ public class Server implements CallbackServer {
 		Body respBody;
 		Header header;
 		Message respMessage;
+		Message ackMessage;
+		String data;
 
 		message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
 		respBody = new MonitorAvailabilityRespBody(null, message);
 		header = new Header(UUID.randomUUID(), 3, 1);
 		respMessage = new Message(header, respBody);
-
-	    sendMessage(respMessage, callback.getAddress(), callback.getPort());
+		this.socket.setSoTimeout(200);
+		while (true) {
+			sendMessage(respMessage, callback.getAddress(), callback.getPort());
+			try {
+				ackMessage = receiveMessage();
+				data = ((MonitorAvailabilityRespBody) ackMessage.getBody()).getPayload();
+				if (data.equals("ACK_CALLBACK")) break;
+			} catch (IOException ex) {
+				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
+			}
+		}
+		this.socket.setSoTimeout(7 * 24 * 60 * 1000);
 	};
 
 	/**
@@ -281,21 +293,23 @@ public class Server implements CallbackServer {
 	 * @param message - message to be sent
 	 * @throws IOException - Unable to reach client.
 	 */
-	private void notifyAllCallbacks(String message) throws RemoteException {
+	private void notifyAllCallbacks(String message, String facilityID) {
 		callbacks.forEach(callback -> {
-			try {
-				notifyCallback(callback, message);
-			} catch (RemoteException re) {
-				re.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (callback.getMonitorFacilityID().equals(facilityID)) {
+				try {
+					notifyCallback(callback, message);
+				} catch (RemoteException re) {
+					re.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 	}
@@ -431,6 +445,7 @@ public class Server implements CallbackServer {
 		if (success) {
 			uuid = newBooking.getUUID();
 			this.bookings.put(uuid, newBooking);
+			notifyAllCallbacks("testMakeBookingAlert", newBooking.getFacilityID());
 		}
 		return uuid;
 	}
@@ -454,7 +469,11 @@ public class Server implements CallbackServer {
 
 		Booking booking = this.bookings.get(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
-		return facility.amendBooking(booking, offset);
+		int statusCode = facility.amendBooking(booking, offset);
+		if (statusCode == 0) {
+			notifyAllCallbacks("test", booking.getFacilityID());
+		}
+		return statusCode;
 	}
 	
 	private ArrayList<String> getFacilityTypes() {
@@ -623,5 +642,16 @@ public class Server implements CallbackServer {
 		DatagramPacket request = new DatagramPacket(buf, buf.length);
 		socket.receive(request);
 		return request;
+	}
+	
+	// to only be used when expecting a specific reply
+	private Message receiveMessage() throws IOException {
+		byte[] buf = new byte[2048];
+		DatagramPacket request = new DatagramPacket(buf, buf.length);
+		socket.receive(request);
+		byte[] byteBuffer = request.getData();
+		ByteBuffer buffer = ByteBuffer.wrap(byteBuffer);
+		Message requestMessage = Deserializer.deserialize(buffer, Message.class);
+		return requestMessage;
 	}
 }
