@@ -38,4 +38,8 @@ public class Header {
 		return this.opCode;
 	}
 
+	public UUID getMessageID() {
+		return messageID;
+	}
+
 }
