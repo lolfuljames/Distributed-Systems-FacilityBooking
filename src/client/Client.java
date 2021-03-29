@@ -12,6 +12,14 @@ import server.Day;
 import server.Time;
 import server.TimeErrorException;
 import utils.*;
+import utils.message.request.*;
+import utils.message.response.*;
+import utils.callback.MonitorCallback;
+import utils.message.Body;
+import utils.message.Header;
+import utils.message.Message;
+import utils.serialize.Deserializer;
+import utils.serialize.Serializer;
 
 /**
  * @author jame0019
@@ -57,21 +65,46 @@ public class Client {
 				scanner.nextLine();
 				continue;
 			}
+			Message requestMessage;
 			switch (opCode) {
 			case 0:
+				String[] args = {"Please choose the facility of interest.", "LT", "TR", "LAB"};
+				menu(args);
+				String facilityName = scanner.nextLine().toUpperCase();
+//				String[] 
+//				args = {"Please choose the day of interest. (Case sensitive)", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
+				ArrayList<Day> days = new ArrayList<Day>();
+				days.add(Day.MONDAY);
+				
+				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
+						new QueryAvailabilityReqBody(days, facilityName));
 //		    	  queryFacility();
 				break;
 			case 1:
-				Message requestMessage = new Message(new Header(UUID.randomUUID(), 1, 0),
-						new MakeBookingReqBody("LT-1", Day.MONDAY, new Time(9, 0), new Time(12, 0)));
+				String facilityID = null;
+				Day day = Day.MONDAY;
+				Time startTime = new Time(9, 0);
+				Time endTime = new Time(12, 0);
+				
+				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MAKE_BOOKING, Constants.REQUEST),
+						new MakeBookingReqBody("LT-1", Day.MONDAY, startTime, endTime));
 				sendMessage(requestMessage, this.serverAddress, this.serverPort);
 //				DatagramPacket packet = receivePacket();
 //		    	  makeBooking();
 				break;
 			case 2:
+				UUID bookingID = UUID.randomUUID();
+				int offset = 0;
+				
+				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.AMEND_BOOKING, Constants.REQUEST),
+						new AmendBookingReqBody(bookingID, offset));
 //		    	  amendBooking();
 				break;
 			case 3:
+				MonitorCallback callback = new MonitorCallback("LT-1", 5, InetAddress.getByName("google.com"), 2);
+				
+				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.REQUEST),
+						new MonitorAvailabilityReqBody(callback));
 				monitorFacility();
 				break;
 			default:
@@ -167,6 +200,14 @@ public class Client {
 
 		System.out.println("End of process...");
 		return;
+	}
+	
+	public void menu(String[] args) {
+		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n");
+		System.out.println(args[0]);
+		for (int i=1; i<args.length; i++) {
+			System.out.println(String.format(" - %s", args[i]));
+		}
 	}
 
 	public void console(String message) {

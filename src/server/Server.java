@@ -9,6 +9,15 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
 import utils.*;
+import utils.callback.CallbackServer;
+import utils.callback.MonitorCallback;
+import utils.message.request.*;
+import utils.message.response.*;
+import utils.message.Body;
+import utils.message.Header;
+import utils.message.Message;
+import utils.serialize.Deserializer;
+import utils.serialize.Serializer;
 
 import java.rmi.RemoteException;
 import java.time.Instant;
@@ -368,6 +377,10 @@ public class Server implements CallbackServer {
 		RespBody respBody = new MakeBookingRespBody(errorMessage, bookingID);
 		return respBody;
 	}
+	
+//	private RespBody handleQueryFacilityTypes() {
+//		
+//	}
 
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
@@ -445,6 +458,14 @@ public class Server implements CallbackServer {
 		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
 		return facility.amendBooking(booking, offset);
 	}
+	
+//	private ArrayList<String> getFacilityTypes() {
+//		ArrayList<String> facilityTypes = new ArrayList<String>();
+//		this.facilities.forEach(facility -> {
+//			
+//		});
+//		return facilityTypes;
+//	}
 
 	/**
 	 * A method to generate facilities.

@@ -1,6 +1,8 @@
 package server;
 
 import utils.*;
+import utils.message.Message;
+
 import java.time.Instant;
 
 public class CacheMessageObject {
