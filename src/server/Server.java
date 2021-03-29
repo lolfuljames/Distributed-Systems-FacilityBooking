@@ -123,7 +123,7 @@ public class Server implements CallbackServer {
 
 //			buf = Serializer.serialize(responseMessage, buf);
 //			server.send(buf);
-			System.out.println("Received: " + new String(request.getData()));
+//			System.out.println("Received: " + new String(request.getData()));
 
 //          Legacy code
 //			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);

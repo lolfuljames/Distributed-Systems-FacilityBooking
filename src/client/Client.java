@@ -53,7 +53,9 @@ public class Client {
 		clientAddress = InetAddress.getLocalHost();
 		clientPort = socket.getLocalPort();
 		String inputStr;
+		boolean awaitReceiveMessage;
 		while (true) {
+			awaitReceiveMessage = false;
 			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
 					+ "1 - Book Facility\n" + "2 - Amend Existing Bookings\n" + "3 - Monitor Facility Bookings\n"
 					+ "Please enter your intended actions: ");
@@ -71,28 +73,28 @@ public class Client {
 			switch (opCode) {
 			case 0:
 		    	requestMessage = this.queryFacilityAvailability(args);
+				awaitReceiveMessage = true;
 				break;
 			case 1:
 		    	requestMessage = this.makeBooking(args);
+				awaitReceiveMessage = true;
 				break;
 			case 2:
 		    	requestMessage = this.amendBooking(args);
+				awaitReceiveMessage = true;
 				break;
 			case 3:
-				MonitorCallback callback = new MonitorCallback("LT-1", 5, InetAddress.getByName("google.com"), 2);
-				
-				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.REQUEST),
-						new MonitorAvailabilityReqBody(callback));
-				monitorFacility();
+				this.monitorFacility();
 				break;
 			default:
-				console("Invalid action selected! Press enter to continue...");
-				scanner.nextLine();
+				console("Invalid action selected!");
 				break;
 			}
-			this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-			Message responseMessage = this.receiveMessage();
-			System.out.println(responseMessage);
+			if (awaitReceiveMessage) {
+				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				Message responseMessage = this.receiveMessage();
+				System.out.println(responseMessage);
+			}
 			backToMain();
 		}
 	}
@@ -279,8 +281,7 @@ public class Client {
 				sendMessage(responseMessage, serverAddress, serverPort);
 			}
 		} catch (IOException ex) {
-			console("Monitor Interval has ended... Exiting... (press Enter to continue)");
-			scanner.nextLine();
+			console("Monitor Interval has ended... Exiting...");
 		}
 		return;
 	}
