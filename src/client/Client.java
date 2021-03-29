@@ -5,7 +5,12 @@ package client;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.*;
+
+import server.Day;
+import server.Time;
+import server.TimeErrorException;
 import utils.*;
 
 /**
@@ -24,9 +29,12 @@ public class Client {
 	 * Initializes client's socket and enters main menu.
 	 * 
 	 * @throws IOException - Unable to reach server.
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
+	 * @throws TimeErrorException 
 	 * 
 	 */
-	private void startClient() throws IOException {
+	private void startClient() throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
 		// TODO Auto-generated method stub
 		serverAddress = InetAddress.getByName(serverHostname);
 		System.out.println("Address: " + serverAddress.getHostAddress());
@@ -50,6 +58,10 @@ public class Client {
 //		    	  queryFacility();
 				break;
 			case 1:
+				Message requestMessage = new Message(new Header(UUID.randomUUID(), 1, 0),
+						new MakeBookingReqBody("LT-1", Day.MONDAY, new Time(9, 0), new Time(12, 0)));
+				sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				DatagramPacket packet = receivePacket();
 //		    	  makeBooking();
 				break;
 			case 2:
@@ -100,7 +112,7 @@ public class Client {
 		}
 
 		MonitorCallback callback = new MonitorCallback(facilityType, facilityID, monitorInterval);
-		sendCallback(callback);
+//		sendCallback(callback);
 	}
 
 	/**
@@ -113,45 +125,36 @@ public class Client {
 	 *                 facility.
 	 * @throws IOException - Unable to reach server.
 	 */
-	public void sendCallback(MonitorCallback callback) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(baos);
-		oos.writeObject(callback);
-		byte[] m = baos.toByteArray();
-
-		DatagramPacket request = new DatagramPacket(m, m.length, serverAddress, serverPort);
-		socket.send(request);
-
-		byte[] buffer = new byte[1000];
-		DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-		socket.receive(reply);
-		socket.setSoTimeout(1000);
-
-//		check for acknowledgment on callback
-		while (!(new String(reply.getData()).trim()).equals("ACK_CALLBACK")) {
-//		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
-			socket.send(request);
-			buffer = new byte[1000];
-			reply = new DatagramPacket(buffer, buffer.length);
-			socket.receive(reply);
-		}
-
-//		7 days timeout
-		buffer = new byte[1000];
-		reply = new DatagramPacket(buffer, buffer.length);
-		socket.receive(reply);
-		socket.setSoTimeout(7 * 24 * 60 * 1000);
-		while (!(new String(reply.getData()).trim()).equals("EXPIRED_CALLBACK")) {
-//		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
-			System.out.println("Reply: " + new String(reply.getData()));
-			buffer = new byte[1000];
-			reply = new DatagramPacket(buffer, buffer.length);
-			socket.receive(reply);
-		}
-
-		System.out.println("End of process...");
-		return;
-	}
+//	public void sendCallback(MonitorCallback callback) throws IOException {
+//		Message message = new Message(new Header(UUID.randomUUID(), 3, 0), new Body())
+//		sendMessage(, this.serverAddress, this.serverPort);
+//		DatagramPacket test = receiveMessage();
+//
+////		check for acknowledgment on callback
+//		while (!(new String(reply.getData()).trim()).equals("ACK_CALLBACK")) {
+////		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.ACK_CALLBACK.name())) {
+//			socket.send(request);
+//			buffer = new byte[1000];
+//			reply = new DatagramPacket(buffer, buffer.length);
+//			socket.receive(reply);
+//		}
+//
+////		7 days timeout
+//		buffer = new byte[1000];
+//		reply = new DatagramPacket(buffer, buffer.length);
+//		socket.receive(reply);
+//		socket.setSoTimeout(7 * 24 * 60 * 1000);
+//		while (!(new String(reply.getData()).trim()).equals("EXPIRED_CALLBACK")) {
+////		while (!(new String(reply.getData()).trim()).equals(CallbackStatus.EXPIRED_CALLBACK.name())) {
+//			System.out.println("Reply: " + new String(reply.getData()));
+//			buffer = new byte[1000];
+//			reply = new DatagramPacket(buffer, buffer.length);
+//			socket.receive(reply);
+//		}
+//
+//		System.out.println("End of process...");
+//		return;
+////	}
 
 	public void console(String message) {
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n" + message);
@@ -160,7 +163,21 @@ public class Client {
 	public DatagramSocket getSocket() {
 		return socket;
 	}
+	
+	private void sendMessage(Message message, InetAddress clientAddr, int clientPort) throws IOException, IllegalArgumentException, IllegalAccessException {
+		ByteBuffer buf = ByteBuffer.allocate(2048);
+		buf = Serializer.serialize(message, buf);
+		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
+		socket.send(response);
+	}
 
+	private DatagramPacket receivePacket() throws IOException {
+		byte[] buf = new byte[2048];
+		DatagramPacket request = new DatagramPacket(buf, buf.length);
+		socket.receive(request);
+		return request;
+	}
+	
 	public static void main(String[] args) {
 		Client client = new Client();
 		try {
@@ -171,6 +188,15 @@ public class Client {
 		} catch (IOException ex) {
 			System.out.println("IO error: " + ex.getMessage());
 			ex.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TimeErrorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
 			if (client.getSocket() != null)
 				client.getSocket().close();
