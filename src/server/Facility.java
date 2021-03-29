@@ -203,5 +203,33 @@ public class Facility {
 		}
 		return statusCode;
 	}
+	
+	public int extendBooking(Booking booking, int minutesToExtend) {
+		int statusCode;
+		boolean amendable = false;
+		Time originalStartTime = booking.getStartTime();
+		Time originalEndTime = booking.getEndTime();
+		Time amendedStartTime = booking.getStartTime();
+		Time amendedEndTime;
+		try {
+			amendedEndTime = booking.getEndTime().add(minutesToExtend);
+			booking.setStartTime(amendedStartTime);
+			booking.setEndTime(amendedEndTime);
+			amendable = this.isBookable(booking);
+		} catch (TimeErrorException e) {
+			return 2;
+		} catch (BookingFailedException e) {
+			return 3;
+		}
+		if (!amendable) {
+			booking.setStartTime(originalStartTime);
+			booking.setEndTime(originalEndTime);
+			statusCode = 1;
+		} else {
+			statusCode = 0;
+		}
+		return statusCode;
+	}
+
 
 }
