@@ -7,24 +7,24 @@ import utils.message.Body;
 public class QueryAvailabilityReqBody extends Body {
 
 	public ArrayList<Day> days;
-	public String facilityName;
+	public String facilityID;
 	
 	public QueryAvailabilityReqBody() {
 		super();
 	}
 	
-	public QueryAvailabilityReqBody(ArrayList<Day> days, String facilityName) {
+	public QueryAvailabilityReqBody(ArrayList<Day> days, String facilityID) {
 		// TODO Auto-generated constructor stub
 		this.days = days;
-		this.facilityName = facilityName;
+		this.facilityID = facilityID;
 	}
 	
 	public ArrayList<Day> getDays() {
 		return this.days;
 	}
 	
-	public String getFacilityName() {
-		return this.facilityName;
+	public String getFacilityID() {
+		return this.facilityID;
 	}
 	
 	public String toString() {
@@ -34,7 +34,7 @@ public class QueryAvailabilityReqBody extends Body {
 			daysToQuery += String.format("%s ", day.toString());
 		}
 		str += String.format("Days to query: %s\n", daysToQuery);
-		str += String.format("Facility to query: %s\n", this.getFacilityName());
+		str += String.format("Facility to query: %s\n", this.getFacilityID());
 		return str;
 	}
 

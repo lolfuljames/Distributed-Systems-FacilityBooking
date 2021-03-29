@@ -267,6 +267,9 @@ public class Deserializer {
 			case Constants.QUERY_FACILITY_TYPES:
 				reqBody = read(QueryFacilityTypesReqBody.class, buffer);
 				break;
+			case Constants.QUERY_FACILITY_IDS:
+				reqBody = read(QueryFacilityIDsReqBody.class, buffer);
+				break;
 			}
 			return reqBody;
 		} else {
@@ -288,6 +291,9 @@ public class Deserializer {
 				break;
 			case Constants.QUERY_FACILITY_TYPES:
 				respBody = read(QueryFacilityTypesRespBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_IDS:
+				respBody = read(QueryFacilityIDsRespBody.class, buffer);
 				break;
 			}
 			return respBody;

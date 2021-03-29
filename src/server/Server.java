@@ -113,6 +113,9 @@ public class Server implements CallbackServer {
 			case Constants.QUERY_FACILITY_TYPES:
 				respBody = this.handleQueryFacilityTypes();
 				break;
+			case Constants.QUERY_FACILITY_IDS:
+				respBody = this.handleQueryFacilityIDs((QueryFacilityIDsReqBody) reqBody);
+				break;
 			}
 
 			responseMessage = new Message(header, respBody);
@@ -332,7 +335,7 @@ public class Server implements CallbackServer {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailability(String facilityName,
+	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityName,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityName)) {
 			throw new UnknownFacilityException();
@@ -351,6 +354,30 @@ public class Server implements CallbackServer {
 		});
 
 		return availableTiming;
+	}
+	
+	private LinkedHashMap<Day, ArrayList<TimePeriod>> queryAvailabilityIDBased(String facilityID,
+			ArrayList<Day> days) throws UnknownFacilityException {
+		String facilityName = facilityID.split("-")[0];
+		if (!this.facilities.containsKey(facilityName)) {
+			throw new UnknownFacilityException();
+		}
+		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityName);
+		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = new LinkedHashMap<Day, ArrayList<TimePeriod>>();
+		
+		return this.facilities.get(facilityName).get(facilityID).getAvailableTiming(days);
+
+//		facilityList.forEach((_facilityID, facility) -> {
+//			LinkedHashMap<Day, ArrayList<TimePeriod>> aTime = facility.getAvailableTiming(days);
+//			aTime.forEach((day, timePeriods) -> {
+//				if (!availableTiming.containsKey(day)) {
+//					availableTiming.put(day, new ArrayList<TimePeriod>());
+//				}
+//				availableTiming.get(day).addAll(timePeriods);
+//			});
+//		});
+//
+//		return availableTiming;
 	}
 
 	private RespBody handleMakeBooking(MakeBookingReqBody reqBody) {
@@ -379,28 +406,55 @@ public class Server implements CallbackServer {
 		RespBody respBody = new QueryFacilityTypesRespBody(null, facilityTypes);
 		return respBody;
 	}
+	
+	private RespBody handleQueryFacilityIDs(QueryFacilityIDsReqBody reqBody) {
+		ArrayList<String> facilityTypes = null;
+		String errorMessage = null;
+		
+		String facilityName = reqBody.getFacilityName();
+		try {
+			facilityTypes = this.getFacilityIDs(facilityName);
+		} catch (UnknownFacilityException e) {
+			errorMessage = String.format("The facility (%s) does not exist.", facilityName);
+		}
+		RespBody respBody = new QueryFacilityTypesRespBody(errorMessage, facilityTypes);
+		return respBody;
+	}
 
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
-		String facilityName = reqBody.getFacilityName();
+		String facilityID = reqBody.getFacilityID();
 		String res = "";
 		String errorMessage = null;
 		try {
-			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
-					.queryAvailability(facilityName, days);
-			res += String.format("Availability for %s:\n", facilityName);
-			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+//			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
+//					.queryAvailabilityNameBased(facilityName, days);
+//			res += String.format("Availability for %s:\n", facilityName);
+//			for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+//				res += String.format("%s:\n", entry.getKey());
+//				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+//					for (TimePeriod timePeriod : e.getValue()) {
+//						res += String.format("%s: %s - %s\n", e.getKey().toString(),
+//								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+//					}
+//				}
+//				res += "--------------------------------------------\n";
+//			}
+			
+
+			LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
+					.queryAvailabilityIDBased(facilityID, days);
+			res += String.format("Availability for %s:\n", facilityID);
+			for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
 				res += String.format("%s:\n", entry.getKey());
-				for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-					for (TimePeriod timePeriod : e.getValue()) {
-						res += String.format("%s: %s - %s\n", e.getKey().toString(),
-								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
-					}
+				for (TimePeriod timePeriod : entry.getValue()) {
+					res += String.format("%s - %s\n",
+							timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
 				}
 				res += "--------------------------------------------\n";
 			}
 		} catch (UnknownFacilityException e) {
-			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityName);
+			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityID);
 		}
 
 		RespBody respBody = new QueryAvailabilityRespBody(errorMessage, res);
@@ -463,6 +517,17 @@ public class Server implements CallbackServer {
 			facilityTypes.add(facility);
 		});
 		return facilityTypes;
+	}
+	
+	private ArrayList<String> getFacilityIDs(String facilityName) throws UnknownFacilityException {
+		if (!this.facilities.containsKey(facilityName)) {
+			throw new UnknownFacilityException();
+		}
+		ArrayList<String> facilityIDs = new ArrayList<String>();
+		this.facilities.get(facilityName).forEach((facility, temp) -> {
+			facilityIDs.add(facility);
+		});
+		return facilityIDs;
 	}
 
 	/**

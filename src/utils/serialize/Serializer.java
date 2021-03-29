@@ -216,7 +216,7 @@ public class Serializer {
 		}
 		Message outMessage = Deserializer.deserialize(buf, message.getClass());
 		QueryAvailabilityReqBody temp = (QueryAvailabilityReqBody) outMessage.getBody();
-		System.out.println(temp.facilityName);
+		System.out.println(temp.facilityID);
 		for(Day day: temp.days) {
 			System.out.println(day);
 		}

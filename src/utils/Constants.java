@@ -16,4 +16,5 @@ public final class Constants {
 	public final static int MONITOR_AVAILABILITY = 3;
 	public final static int EXTEND_BOOKING = 4;
 	public final static int QUERY_FACILITY_TYPES = 5;
+	public final static int QUERY_FACILITY_IDS = 6;
 }

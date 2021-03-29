@@ -162,7 +162,16 @@ public class Client {
 		}
 		menu(args);
 		
-		String facilityName = scanner.nextLine().toUpperCase();
+		String facilityType = scanner.nextLine().toUpperCase();
+		args.clear();
+		ArrayList<String> facilityIDs = this.queryFacilityIDs(facilityType);
+		args.add("Please enter the facility ID of interest.");
+		for (String facilityID : facilityIDs) {
+			args.add(facilityID);
+		}
+		menu(args);
+		
+		String facilityID = scanner.nextLine().toUpperCase();
 		args.clear();
 		args.add("Please choose the day of interest (Separate day by a white space if querying for multiple days.");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -171,17 +180,26 @@ public class Client {
 		menu(args);
 		
 		String[] daysInput = scanner.nextLine().toUpperCase().split(" ");
-//		ArrayList<String> days = new ArrayList<String>(Arrays.asList(daysInput.split(" ")));
 		ArrayList<Day> days = new ArrayList<Day>();
 		for (String day : daysInput) {
 			days.add(Day.valueOf(day));
 		}
 		
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityName));
+				new QueryAvailabilityReqBody(days, facilityID));
 		
 		return requestMessage;
 		
+	}
+
+	private ArrayList<String> queryFacilityIDs(String facilityType) throws IllegalArgumentException, IllegalAccessException, IOException {
+		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_IDS, Constants.REQUEST);
+		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
+		Message requestMessage = new Message(header, reqBody);
+		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+		Message responseMessage = this.receiveMessage();
+		QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
+		return respBody.getFacilityIDs();
 	}
 
 	private ArrayList<String> queryFacilityTypes() throws IllegalArgumentException, IllegalAccessException, IOException {
