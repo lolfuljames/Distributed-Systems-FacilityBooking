@@ -7,6 +7,9 @@ public class AmendBookingReqBody extends Body {
 	private UUID bookingID;
 	private int offset;
 	
+	public AmendBookingReqBody() {
+	}
+	
 	public AmendBookingReqBody(UUID bookingID, int offset) {
 		super();
 		this.setBookingID(bookingID);

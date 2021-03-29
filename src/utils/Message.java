@@ -9,12 +9,16 @@ package utils;
  */
 public class Message {
 	
-	private Header header;
-	private Body body;
+	public Header header;
+	public Body body;
 
 	/**
 	 * 
 	 */
+	public Message() {
+		
+	}
+	
 	public Message(Header header, Body body) {
 		this.setHeader(header);
 		this.setBody(body);

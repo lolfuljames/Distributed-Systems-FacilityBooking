@@ -52,6 +52,7 @@ public class Server implements CallbackServer {
 		}
 		System.out.println("Servicing the requests...");
 		while (true) {
+
 			if (semanticMode == 0) {
 				updateCacheTTL();
 			}
@@ -61,6 +62,7 @@ public class Server implements CallbackServer {
 
 			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1),
 					new MakeBookingRespBody("", UUID.randomUUID()));
+
 			int opCode = requestMessage.getHeader().getOpCode();
 			UUID messageID = requestMessage.getHeader().getMessageID();
 

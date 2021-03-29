@@ -4,6 +4,10 @@ public class QueryAvailabilityRespBody extends RespBody {
 
 	public String payload;
 	
+	public QueryAvailabilityRespBody() {
+		
+	}
+	
 	public QueryAvailabilityRespBody(String errorMessage, String payload) {
 		super(errorMessage);
 		this.payload = payload;
