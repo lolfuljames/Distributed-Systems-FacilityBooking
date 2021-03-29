@@ -113,9 +113,17 @@ public class Facility {
 		int firstBookingIdx = 0;
 		int lastBookingIdx = bookings.size() - 1;
 		if (bookings.get(firstBookingIdx) == booking) {
-			firstBookingIdx += 1;
+			if (bookings.size() < 2) {
+				return true;
+			} else {
+				firstBookingIdx += 1;
+			}
 		} else if (bookings.get(lastBookingIdx) == booking) {
-			lastBookingIdx -= 1;
+			if (bookings.size() < 2) {
+				return true;
+			} else {
+				lastBookingIdx -= 1;
+			}
 		}
 		if (booking.getEndTime().compareTo(bookings.get(firstBookingIdx).getStartTime()) <= 0) {
 			return true;
