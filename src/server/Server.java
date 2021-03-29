@@ -53,12 +53,11 @@ public class Server implements CallbackServer {
 		}
 		System.out.println("Servicing the requests...");
 		while (true) {
-
+			DatagramPacket request = receivePacket();
 			if (semanticMode == 0) {
 				updateCacheTTL();
 			}
 			updateMonitorInterval();
-			DatagramPacket request = receivePacket();
 //			Message requestMessage = Deserializer.deserialize(request.getData(), Message.class);
 //
 //			Message requestMessage = new Message(new Header(UUID.randomUUID(), 0, 1),
@@ -117,7 +116,6 @@ public class Server implements CallbackServer {
 //          Legacy code
 //			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
 //			socket.send(response);
-
 			// prepare the datagram packet to response
 			sendMessage(responseMessage, clientAddr, clientPort);
 
@@ -181,9 +179,11 @@ public class Server implements CallbackServer {
 	 * @param request - DatagramPacket sent from client.
 	 * @throws IOException - Unable to reach client.
 	 * @return respBody - Response Body with message:ACK error:null.
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
 	 */
 	public RespBody handleCallback(MonitorAvailabilityReqBody reqBody)
-			throws IOException, ClassNotFoundException {
+			throws IOException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException {
 		String payload = "ACK_CALLBACK";
 		String errorMessage = null;
 		MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
@@ -220,32 +220,21 @@ public class Server implements CallbackServer {
 
 	/**
 	 * 
-	 * Handler to add callback to registered list, sends ACK to client.
+	 * Handler to add callback to registered list
 	 * 
 	 * @param callback - MonitorCallback object sent from client.
-	 * @throws IOException - Unable to reach client.
 	 */
-	public void addCallback(MonitorCallback callback) throws IOException {
-		byte[] buffer = "ACK_CALLBACK".getBytes();
-//		  byte[] buffer = CallbackStatus.ACK_CALLBACK.getBytes();
-		DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
-		socket.send(reply);
+	public void addCallback(MonitorCallback callback) {
 		callbacks.add(callback);
 	}
 
 	/**
 	 * 
-	 * Handler to remove callback from registered list, sends EXPIRED_CALLBACK to
-	 * client.
+	 * Handler to remove callback from registered list
 	 * 
-	 * @param callback - MonitorCallback object to be removed.
-	 * @throws IOException - Unable to reach client.
+	 * @param callback - MonitorCallback object to be removed.\
 	 */
-	public void removeCallback(MonitorCallback callback) throws IOException {
-		byte[] buffer = "EXPIRED_CALLBACK".getBytes();
-//		  byte[] buffer = CallbackStatus.EXPIRED_CALLBACK.getBytes();
-		DatagramPacket reply = new DatagramPacket(buffer, buffer.length, callback.getAddress(), callback.getPort());
-		socket.send(reply);
+	public void removeCallback(MonitorCallback callback) {
 		callbacks.remove(callback);
 	}
 
@@ -257,9 +246,11 @@ public class Server implements CallbackServer {
 	 * @param message  - message to be sent
 	 * @throws IOException - Unable to reach client. TODO - uncomment sendMessage
 	 *                     when serializer is ready.
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
 	 */
-	private void notifyCallback(MonitorCallback callback, String message) throws IOException {
-		RespBody respBody;
+	private void notifyCallback(MonitorCallback callback, String message) throws IOException, IllegalArgumentException, IllegalAccessException {
+		Body respBody;
 		Header header;
 		Message respMessage;
 
@@ -268,7 +259,7 @@ public class Server implements CallbackServer {
 		header = new Header(UUID.randomUUID(), 3, 1);
 		respMessage = new Message(header, respBody);
 
-//		    sendMessage(respMessage, callback.getAddress(), callback.getPort());
+	    sendMessage(respMessage, callback.getAddress(), callback.getPort());
 	};
 
 	/**
@@ -285,6 +276,12 @@ public class Server implements CallbackServer {
 			} catch (RemoteException re) {
 				re.printStackTrace();
 			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -309,11 +306,7 @@ public class Server implements CallbackServer {
 			}
 		});
 		expiredCallbacks.forEach(callback -> {
-			try {
-				removeCallback(callback);
-			} catch (IOException re) {
-				throw new RuntimeException(re);
-			}
+			removeCallback(callback);
 		});
 	}
 
