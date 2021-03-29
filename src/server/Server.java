@@ -270,7 +270,7 @@ public class Server implements CallbackServer {
 
 		message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
 		respBody = new MonitorAvailabilityRespBody(null, message);
-		header = new Header(UUID.randomUUID(), 3, 1);
+		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
 		this.socket.setSoTimeout(200);
 		while (true) {

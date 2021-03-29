@@ -245,7 +245,7 @@ public class Client {
 	 * @throws IllegalArgumentException 
 	 */
 	public void registerCallback(MonitorCallback callback) throws IOException, IllegalArgumentException, IllegalAccessException {
-		Header header = new Header(UUID.randomUUID(), 3, 0);
+		Header header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.REQUEST);
 		Body body = new MonitorAvailabilityReqBody(callback);
 		Message requestMessage = new Message(header, body);
 		Message responseMessage;
@@ -273,7 +273,7 @@ public class Client {
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
 				System.out.println(data);
-				header = new Header(UUID.randomUUID(), 3, 0);
+				header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 				body = new MonitorAvailabilityRespBody(null, "ACK_CALLBACK");
 				responseMessage = new Message(header,body);
 				sendMessage(responseMessage, serverAddress, serverPort);
