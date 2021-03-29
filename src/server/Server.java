@@ -80,7 +80,7 @@ public class Server implements CallbackServer {
 			Message responseMessage = null;
 			Body reqBody = requestMessage.getBody();
 			Body respBody = null;
-			Header header = new Header(messageID, opCode, 1);
+			Header header = new Header(messageID, opCode, Constants.RESPONSE);
 
 			InetAddress clientAddr = request.getAddress();
 			int clientPort = request.getPort();
@@ -92,26 +92,25 @@ public class Server implements CallbackServer {
 				continue;
 			}
 
-			opCode = 4;
 			switch (opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 				respBody = this.handleQueryAvailability((QueryAvailabilityReqBody) reqBody);
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 				respBody = this.handleMakeBooking((MakeBookingReqBody) reqBody);
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 				respBody = handleAmendBooking((AmendBookingReqBody) reqBody);
 
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				respBody = handleCallback((MonitorAvailabilityReqBody) reqBody);
 //			    while (callbacks.size() > 0) {
 //				    updateMonitorInterval();
 //				    notifyAllCallbacks("Received with thanks");
 //			    }
 				break;
-			case 4:
+			case Constants.QUERY_FACILITY_TYPES:
 				respBody = this.handleQueryFacilityTypes();
 				break;
 			}
@@ -356,7 +355,7 @@ public class Server implements CallbackServer {
 
 	private RespBody handleMakeBooking(MakeBookingReqBody reqBody) {
 		String facilityID = reqBody.getFacilityID();
-		String facilityName = facilityID.split("-", 1)[0];
+		String facilityName = facilityID.split("-")[0];
 		Day day = reqBody.getDay();
 		Time startTime = reqBody.getStartTime();
 		Time endTime = reqBody.getEndTime();
@@ -377,7 +376,7 @@ public class Server implements CallbackServer {
 	
 	private RespBody handleQueryFacilityTypes() {
 		ArrayList<String> facilityTypes = this.getFacilityTypes();
-		RespBody respBody = new QueryFacilityTypesRespBody("", facilityTypes);
+		RespBody respBody = new QueryFacilityTypesRespBody(null, facilityTypes);
 		return respBody;
 	}
 

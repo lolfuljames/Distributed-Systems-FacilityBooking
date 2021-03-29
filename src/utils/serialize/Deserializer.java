@@ -287,7 +287,7 @@ public class Deserializer {
 				respBody = read(ExtendBookingRespBody.class, buffer);
 				break;
 			case Constants.QUERY_FACILITY_TYPES:
-				reqBody = read(QueryFacilityTypesRespBody.class, buffer);
+				respBody = read(QueryFacilityTypesRespBody.class, buffer);
 				break;
 			}
 			return respBody;

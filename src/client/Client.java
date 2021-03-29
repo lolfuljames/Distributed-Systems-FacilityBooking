@@ -66,40 +66,17 @@ public class Client {
 				scanner.nextLine();
 				continue;
 			}
-			Message requestMessage;
+			Message requestMessage = null;
+			ArrayList<String> args = new ArrayList<String>();
 			switch (opCode) {
 			case 0:
-				String[] args = {"Please choose the facility of interest.", "LT", "TR", "LAB"};
-				menu(args);
-				String facilityName = scanner.nextLine().toUpperCase();
-//				String[] 
-//				args = {"Please choose the day of interest. (Case sensitive)", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
-				ArrayList<Day> days = new ArrayList<Day>();
-				days.add(Day.MONDAY);
-				
-				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-						new QueryAvailabilityReqBody(days, facilityName));
-//		    	  queryFacility();
+		    	requestMessage = this.queryFacilityAvailability(args);
 				break;
 			case 1:
-				String facilityID = null;
-				Day day = Day.MONDAY;
-				Time startTime = new Time(9, 0);
-				Time endTime = new Time(12, 0);
-				
-				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MAKE_BOOKING, Constants.REQUEST),
-						new MakeBookingReqBody("LT-1", Day.MONDAY, startTime, endTime));
-				sendMessage(requestMessage, this.serverAddress, this.serverPort);
-//				DatagramPacket packet = receivePacket();
-//		    	  makeBooking();
+		    	requestMessage = this.makeBooking(args);
 				break;
 			case 2:
-				UUID bookingID = UUID.randomUUID();
-				int offset = 0;
-				
-				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.AMEND_BOOKING, Constants.REQUEST),
-						new AmendBookingReqBody(bookingID, offset));
-//		    	  amendBooking();
+		    	requestMessage = this.amendBooking(args);
 				break;
 			case 3:
 				MonitorCallback callback = new MonitorCallback("LT-1", 5, InetAddress.getByName("google.com"), 2);
@@ -113,12 +90,108 @@ public class Client {
 				scanner.nextLine();
 				break;
 			}
+			this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+			Message responseMessage = this.receiveMessage();
+			System.out.println(responseMessage);
+			backToMain();
 		}
-//	      byte[] m = args[0].getBytes();
-//	      byte[] m = new String("abcdef").getBytes();
+	}
+	
+	private Message amendBooking(ArrayList<String> args) {
+		System.out.println("Please enter the booking ID.");
+		UUID bookingID = UUID.fromString(scanner.nextLine());
+		
+		System.out.println("Please enter the offset (in minutes) that you wish to advance/postpone. (negative number to advance, positive number to postpone)");
+		int offset = Integer.parseInt(scanner.nextLine());
 
-//	      socket.receive(reply);
-//	      System.out.println("Reply: " + new String(reply.getData()));
+		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.AMEND_BOOKING, Constants.REQUEST),
+				new AmendBookingReqBody(bookingID, offset));
+		
+		return requestMessage;
+	}
+
+	private Message makeBooking(ArrayList<String> args) throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
+		ArrayList<String> facilityTypes = this.queryFacilityTypes();
+		args.add("Please choose the facility of interest.");
+		for (String facilityType : facilityTypes) {
+			args.add(facilityType);
+		}
+		menu(args);
+		
+		String facilityName = scanner.nextLine().toUpperCase();
+		args.clear();
+		args.add("Please enter the day of interest.");
+		Arrays.asList(Day.values()).forEach(day -> {
+			args.add(day.toString());
+		});
+		menu(args);
+		
+		String dayInput = scanner.nextLine().toUpperCase();
+		Day selectedDay = Day.valueOf(dayInput);
+		ArrayList<Day> days = new ArrayList<Day>();
+		days.add(selectedDay);
+		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
+				new QueryAvailabilityReqBody(days, facilityName));
+		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+		Message responseMessage = this.receiveMessage();
+		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
+		System.out.println(respBody.getPayLoad());
+		
+		System.out.println("Please enter the desired facility ID.");
+		String facilityID = scanner.nextLine().toUpperCase();
+		
+		System.out.println("Please enter start time. (in HH:MM format)");
+		String[] startTimeInput = scanner.nextLine().split(":");
+		Time startTime = new Time(Integer.parseInt(startTimeInput[0]), Integer.parseInt(startTimeInput[1]));
+		
+		System.out.println("Please enter end time. (in HH:MM format)");
+		String[] endTimeInput = scanner.nextLine().split(":");
+		Time endTime = new Time(Integer.parseInt(endTimeInput[0]), Integer.parseInt(endTimeInput[1]));
+
+		requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MAKE_BOOKING, Constants.REQUEST),
+				new MakeBookingReqBody(facilityID, selectedDay, startTime, endTime));
+		
+		return requestMessage;
+	}
+
+	private Message queryFacilityAvailability(ArrayList<String> args) throws IllegalArgumentException, IllegalAccessException, IOException {
+		ArrayList<String> facilityTypes = this.queryFacilityTypes();
+		args.add("Please enter the facility of interest.");
+		for (String facilityType : facilityTypes) {
+			args.add(facilityType);
+		}
+		menu(args);
+		
+		String facilityName = scanner.nextLine().toUpperCase();
+		args.clear();
+		args.add("Please choose the day of interest (Separate day by a white space if querying for multiple days.");
+		Arrays.asList(Day.values()).forEach(day -> {
+			args.add(day.toString());
+		});
+		menu(args);
+		
+		String[] daysInput = scanner.nextLine().toUpperCase().split(" ");
+//		ArrayList<String> days = new ArrayList<String>(Arrays.asList(daysInput.split(" ")));
+		ArrayList<Day> days = new ArrayList<Day>();
+		for (String day : daysInput) {
+			days.add(Day.valueOf(day));
+		}
+		
+		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
+				new QueryAvailabilityReqBody(days, facilityName));
+		
+		return requestMessage;
+		
+	}
+
+	private ArrayList<String> queryFacilityTypes() throws IllegalArgumentException, IllegalAccessException, IOException {
+		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_TYPES, Constants.REQUEST);
+		Body reqBody = new QueryFacilityTypesReqBody();
+		Message requestMessage = new Message(header, reqBody);
+		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+		Message responseMessage = this.receiveMessage();
+		QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
+		return respBody.getFacilityTypes();
 	}
 
 	/**
@@ -208,12 +281,17 @@ public class Client {
 		return;
 	}
 	
-	public void menu(String[] args) {
+	public void menu(ArrayList<String> args) {
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n");
-		System.out.println(args[0]);
-		for (int i=1; i<args.length; i++) {
-			System.out.println(String.format(" - %s", args[i]));
+		System.out.println(args.get(0));
+		for (int i=1; i<args.size(); i++) {
+			System.out.println(String.format(" - %s", args.get(i)));
 		}
+	}
+	
+	public void backToMain() {
+		System.out.println("Press enter to return to continue...");
+		scanner.nextLine();
 	}
 
 	public void console(String message) {
