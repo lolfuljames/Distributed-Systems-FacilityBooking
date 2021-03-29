@@ -92,6 +92,7 @@ public class Server implements CallbackServer {
 				continue;
 			}
 
+			opCode = 4;
 			switch (opCode) {
 			case 0:
 				respBody = this.handleQueryAvailability((QueryAvailabilityReqBody) reqBody);
@@ -109,6 +110,9 @@ public class Server implements CallbackServer {
 //				    updateMonitorInterval();
 //				    notifyAllCallbacks("Received with thanks");
 //			    }
+				break;
+			case 4:
+				respBody = this.handleQueryFacilityTypes();
 				break;
 			}
 
@@ -371,9 +375,11 @@ public class Server implements CallbackServer {
 		return respBody;
 	}
 	
-//	private RespBody handleQueryFacilityTypes() {
-//		
-//	}
+	private RespBody handleQueryFacilityTypes() {
+		ArrayList<String> facilityTypes = this.getFacilityTypes();
+		RespBody respBody = new QueryFacilityTypesRespBody("", facilityTypes);
+		return respBody;
+	}
 
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
@@ -452,13 +458,13 @@ public class Server implements CallbackServer {
 		return facility.amendBooking(booking, offset);
 	}
 	
-//	private ArrayList<String> getFacilityTypes() {
-//		ArrayList<String> facilityTypes = new ArrayList<String>();
-//		this.facilities.forEach(facility -> {
-//			
-//		});
-//		return facilityTypes;
-//	}
+	private ArrayList<String> getFacilityTypes() {
+		ArrayList<String> facilityTypes = new ArrayList<String>();
+		this.facilities.forEach((facility, temp) -> {
+			facilityTypes.add(facility);
+		});
+		return facilityTypes;
+	}
 
 	/**
 	 * A method to generate facilities.
