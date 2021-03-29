@@ -39,8 +39,12 @@ public class Message {
 	
 	public String toString() {
 		String str = "";
+		str += "Header:\n";
 		str += this.getHeader().toString();
+		str += "--------------------------------------------\n";
+		str += "Body:\n";
 		str += this.getBody().toString();
+		str += "--------------------------------------------\n";
 		return str;
 	}
 
