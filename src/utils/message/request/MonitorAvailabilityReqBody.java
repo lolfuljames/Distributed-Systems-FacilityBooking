@@ -9,6 +9,8 @@ public class MonitorAvailabilityReqBody extends Body {
 
 	private MonitorCallback monitorCallback;
 	
+	public MonitorAvailabilityReqBody() {}
+
 	public MonitorAvailabilityReqBody(MonitorCallback monitorCallback) {
 		// TODO Auto-generated constructor stub
 		this.setMonitorCallback(monitorCallback);

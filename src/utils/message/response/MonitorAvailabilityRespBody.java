@@ -3,6 +3,8 @@ package utils.message.response;
 public class MonitorAvailabilityRespBody extends RespBody {
 
 	private String payload;
+
+	public MonitorAvailabilityRespBody() {}
 	
 	public MonitorAvailabilityRespBody(String errorMessage, String payload) {
 		super(errorMessage);

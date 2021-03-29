@@ -17,6 +17,6 @@ public interface CallbackServer extends Remote {
 	 * 
 	 */
 	public void getBooking() throws RemoteException;
-	public void addCallback(MonitorCallback callback) throws IOException;
+	public void addCallback(MonitorCallback callback) throws IOException, IllegalArgumentException, IllegalAccessException;
 	public void removeCallback(MonitorCallback callback) throws IOException;
 }

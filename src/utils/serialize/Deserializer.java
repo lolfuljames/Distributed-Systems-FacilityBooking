@@ -274,7 +274,7 @@ public class Deserializer {
 				respBody = read(AmendBookingRespBody.class, buffer);
 				break;
 			case 3:
-				reqBody = read(MonitorAvailabilityRespBody.class, buffer);
+				respBody = read(MonitorAvailabilityRespBody.class, buffer);
 				break;
 			}
 			return respBody;
