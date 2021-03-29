@@ -19,5 +19,11 @@ public class MonitorAvailabilityReqBody extends Body {
 	public void setMonitorCallback(MonitorCallback monitorCallback) {
 		this.monitorCallback = monitorCallback;
 	}
+	
+	public String toString() {
+		String str = "";
+		str += String.format("Monitor Callback: %s\n", this.getMonitorCallback().toString());
+		return str;
+	}
 
 }

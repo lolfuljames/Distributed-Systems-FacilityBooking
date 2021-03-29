@@ -13,8 +13,7 @@ import java.io.Serializable;
  *
  */
 public class MonitorCallback implements Remote, Serializable {
-
-	private String monitorFacilityType;
+	
 	private String monitorFacilityID;
 	private int monitorInterval;
 	private InetAddress address;
@@ -23,19 +22,13 @@ public class MonitorCallback implements Remote, Serializable {
 	 * @return 
 	 * 
 	 */
-	
 	public MonitorCallback() {
 		
 	}
 	
-	public MonitorCallback(String facilityType, String monitorFacilityID, int monitorInterval) {
-		this.monitorFacilityType = facilityType;
+	public MonitorCallback(String monitorFacilityID, int monitorInterval) {
 		this.monitorFacilityID = monitorFacilityID;
 		this.monitorInterval = monitorInterval;
-	}
-	
-	public String getMonitorFacilityType() {
-		return monitorFacilityType;
 	}
 
 	public String getMonitorFacilityID() {
@@ -67,4 +60,11 @@ public class MonitorCallback implements Remote, Serializable {
 	}
 
 	public static final long serialVersionUID = 42L;
+	
+	public String toString() {
+		String str = "";
+		str += String.format("Monitoring callback requested by %s (IP) at port %d\n", this.getAddress().toString(), this.getPort());
+		str += String.format("Monitoring %s for %d minutes\n", this.getMonitorFacilityID(), this.getMonitorInterval());
+		return str;
+	}
 }
