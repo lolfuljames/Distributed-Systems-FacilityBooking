@@ -25,5 +25,16 @@ public class QueryAvailabilityReqBody extends Body {
 	public String getFacilityName() {
 		return this.facilityName;
 	}
+	
+	public String toString() {
+		String str = "";
+		String daysToQuery = "";
+		for (Day day : this.getDays()) {
+			daysToQuery += String.format("%s ", day.toString());
+		}
+		str += String.format("Days to query: %s\n", daysToQuery);
+		str += String.format("Facility to query: %s\n", this.getFacilityName());
+		return str;
+	}
 
 }

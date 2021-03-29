@@ -40,5 +40,16 @@ public class Message {
 	public void setHeader(Header header) {
 		this.header = header;
 	}
+	
+	public String toString() {
+		String str = "";
+		str += "Header:\n";
+		str += this.getHeader().toString();
+		str += "--------------------------------------------\n";
+		str += "Body:\n";
+		str += this.getBody().toString();
+		str += "--------------------------------------------\n";
+		return str;
+	}
 
 }

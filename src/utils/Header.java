@@ -41,5 +41,16 @@ public class Header {
 	public UUID getMessageID() {
 		return messageID;
 	}
+	
+	public int getMessageType() {
+		return this.messageType;
+	}
+	
+	public String toString() {
+		String str = "";
+		str += String.format("Message ID: %s\n", this.getMessageID().toString());
+		str += String.format("OpCode: %d\n", this.getOpCode());
+		return str;
+	}
 
 }
