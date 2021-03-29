@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.io.*;
 import server.*;
+import utils.Constants;
 import utils.message.Body;
 import utils.message.Message;
 import utils.message.request.*;
@@ -248,39 +249,45 @@ public class Deserializer {
 		Object respBody = null;
 		if(messageType == 0) {
 			switch(opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 				reqBody = read(QueryAvailabilityReqBody.class, buffer);
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 				reqBody = read(MakeBookingReqBody.class, buffer);
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 				reqBody = read(AmendBookingReqBody.class, buffer);
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				reqBody = read(MonitorAvailabilityReqBody.class, buffer);
 				break;
-			case 4:
+			case Constants.EXTEND_BOOKING:
 				reqBody = read(ExtendBookingReqBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_TYPES:
+				reqBody = read(QueryFacilityTypesReqBody.class, buffer);
 				break;
 			}
 			return reqBody;
 		} else {
 			switch(opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 				respBody = read(QueryAvailabilityRespBody.class, buffer);
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 				respBody = read(MakeBookingRespBody.class, buffer);
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 				respBody = read(AmendBookingRespBody.class, buffer);
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				respBody = read(MonitorAvailabilityRespBody.class, buffer);
 				break;
-			case 4:
+			case Constants.EXTEND_BOOKING:
 				respBody = read(ExtendBookingRespBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_TYPES:
+				reqBody = read(QueryFacilityTypesRespBody.class, buffer);
 				break;
 			}
 			return respBody;

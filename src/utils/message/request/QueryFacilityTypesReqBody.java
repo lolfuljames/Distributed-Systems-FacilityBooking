@@ -21,6 +21,6 @@ public class QueryFacilityTypesReqBody extends Body {
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "Facility Types Query";
+		return "Facility Types Query\n";
 	}
 }
