@@ -260,6 +260,9 @@ public class Deserializer {
 			case 3:
 				reqBody = read(MonitorAvailabilityReqBody.class, buffer);
 				break;
+			case 4:
+				reqBody = read(ExtendBookingReqBody.class, buffer);
+				break;
 			}
 			return reqBody;
 		} else {
@@ -275,6 +278,9 @@ public class Deserializer {
 				break;
 			case 3:
 				respBody = read(MonitorAvailabilityRespBody.class, buffer);
+				break;
+			case 4:
+				respBody = read(ExtendBookingRespBody.class, buffer);
 				break;
 			}
 			return respBody;
