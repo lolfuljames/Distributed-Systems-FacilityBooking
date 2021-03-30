@@ -107,7 +107,7 @@ public class Client {
 				break;
 			}
 			if (awaitReceiveMessage) {
-				socket.setSoTimeout(200);
+				socket.setSoTimeout(350);
 				while (true) {
 					try {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -186,10 +186,10 @@ public class Client {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 				} else {
-					System.out.println(respBody.getPayLoad());
+					System.out.println(respBody.getPayload());
 				}
 				break;
 			} catch (IOException ex) {
@@ -264,7 +264,7 @@ public class Client {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityIDs = null;
 				} else {
@@ -289,7 +289,7 @@ public class Client {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityTypes = null;
 				} else {

@@ -230,7 +230,7 @@ public class Server implements CallbackServer {
 		} else
 			errorMessage = "Unexpected Error Occured!";
 
-		RespBody respBody = new AmendBookingRespBody(errorMessage);
+		RespBody respBody = new AmendBookingRespBody(errorMessage, bookingID);
 		return respBody;
 	}
 	
@@ -252,7 +252,7 @@ public class Server implements CallbackServer {
 		} else
 			errorMessage = "Unexpected Error Occured!";
 
-		RespBody respBody = new AmendBookingRespBody(errorMessage);
+		RespBody respBody = new AmendBookingRespBody(errorMessage, bookingID);
 		return respBody;
 	}
 	
@@ -481,7 +481,7 @@ public class Server implements CallbackServer {
 			errorMessage = "Invalid UUID";
 		}
 
-		RespBody respBody = new CancelBookingRespBody(errorMessage);
+		RespBody respBody = new CancelBookingRespBody(errorMessage, bookingID);
 		return respBody;
 	}
 	
