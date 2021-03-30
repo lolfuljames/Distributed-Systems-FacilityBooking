@@ -126,7 +126,7 @@ public class Server implements CallbackServer {
 
 //			buf = Serializer.serialize(responseMessage, buf);
 //			server.send(buf);
-			System.out.println("Received: " + new String(request.getData()));
+//			System.out.println("Received: " + new String(request.getData()));
 
 //          Legacy code
 //			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddr, clientPort);
@@ -268,13 +268,25 @@ public class Server implements CallbackServer {
 		Body respBody;
 		Header header;
 		Message respMessage;
+		Message ackMessage;
+		String data;
 
 		message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
 		respBody = new MonitorAvailabilityRespBody(null, message);
-		header = new Header(UUID.randomUUID(), 3, 1);
+		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
-
-	    sendMessage(respMessage, callback.getAddress(), callback.getPort());
+		this.socket.setSoTimeout(200);
+		while (true) {
+			sendMessage(respMessage, callback.getAddress(), callback.getPort());
+			try {
+				ackMessage = receiveMessage();
+				data = ((MonitorAvailabilityRespBody) ackMessage.getBody()).getPayload();
+				if (data.equals("ACK_CALLBACK")) break;
+			} catch (IOException ex) {
+				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
+			}
+		}
+		this.socket.setSoTimeout(7 * 24 * 60 * 1000);
 	};
 
 	/**
@@ -284,21 +296,38 @@ public class Server implements CallbackServer {
 	 * @param message - message to be sent
 	 * @throws IOException - Unable to reach client.
 	 */
-	private void notifyAllCallbacks(String message) throws RemoteException {
+	private void notifyAllCallbacks(Facility facility) {
+		String message = "";
+		ArrayList<Day> allDays = Day.getAllDays();
+		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming;
+		try {
+			availableTiming = this.queryAvailabilityIDBased(facility.getFacilityID(), allDays);
+		} catch (UnknownFacilityException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			System.out.println("Notifying callback of unknown facility.. This error should never happen..");
+			return;
+		}
+		message += String.format("Availability for %s:\n", facility.getType());
+		message += _convertIDTimingsToString(availableTiming);
+		
+		final String callbackMessage = message;
 		callbacks.forEach(callback -> {
-			try {
-				notifyCallback(callback, message);
-			} catch (RemoteException re) {
-				re.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (callback.getMonitorFacilityID().equals(facility.getFacilityID())) {
+				try {
+					notifyCallback(callback, callbackMessage);
+				} catch (RemoteException re) {
+					re.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 	}
@@ -327,7 +356,7 @@ public class Server implements CallbackServer {
 
 	/**
 	 * 
-	 * @param facilityName - The name of facility.
+	 * @param facilityType - The name of facility.
 	 * @param days         - The days to be queried.
 	 * @return availableTiming - The available timing for the queried facility on
 	 *         days given. { Day1: { facility1: [...], facility2: [...], }, Day2: {
@@ -335,12 +364,12 @@ public class Server implements CallbackServer {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityName,
+	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityType,
 			ArrayList<Day> days) throws UnknownFacilityException {
-		if (!this.facilities.containsKey(facilityName)) {
+		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
 		}
-		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityName);
+		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityType);
 		LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = new LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>>();
 
 		facilityList.forEach((facilityID, facility) -> {
@@ -382,7 +411,7 @@ public class Server implements CallbackServer {
 
 	private RespBody handleMakeBooking(MakeBookingReqBody reqBody) {
 		String facilityID = reqBody.getFacilityID();
-		String facilityName = facilityID.split("-")[0];
+		String facilityType = facilityID.split("-")[0];
 		Day day = reqBody.getDay();
 		Time startTime = reqBody.getStartTime();
 		Time endTime = reqBody.getEndTime();
@@ -390,9 +419,9 @@ public class Server implements CallbackServer {
 		UUID bookingID = null;
 		String errorMessage = "";
 		try {
-			bookingID = this.makeBooking(facilityName, facilityID, day, startTime, endTime);
+			bookingID = this.makeBooking(facilityType, facilityID, day, startTime, endTime);
 		} catch (UnknownFacilityException e) {
-			errorMessage = String.format("The facility (%s) does not exist.", facilityName);
+			errorMessage = String.format("The facility (%s) does not exist.", facilityType);
 		} catch (BookingFailedException e) {
 			errorMessage = e.getMessage();
 		}
@@ -433,28 +462,12 @@ public class Server implements CallbackServer {
 				LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
 						.queryAvailabilityIDBased(facilityID, days);
 				res += String.format("Availability for %s:\n", facilityID);
-				for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
-					res += String.format("%s:\n", entry.getKey());
-					for (TimePeriod timePeriod : entry.getValue()) {
-						res += String.format("%s - %s\n",
-								timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
-					}
-					res += "--------------------------------------------\n";
-				}
+				res += this._convertIDTimingsToString(availableTiming);
 			} else {
 				LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
 						.queryAvailabilityNameBased(facilityName, days);
 				res += String.format("Availability for %s:\n", facilityName);
-				for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
-					res += String.format("%s:\n", entry.getKey());
-					for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
-						for (TimePeriod timePeriod : e.getValue()) {
-							res += String.format("%s: %s - %s\n", e.getKey().toString(),
-									timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
-						}
-					}
-					res += "--------------------------------------------\n";
-				}
+			  res += this._convertTimingsToString(availableTiming);
 			}
 		} catch (UnknownFacilityException e) {
 			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityID);
@@ -463,31 +476,62 @@ public class Server implements CallbackServer {
 		RespBody respBody = new QueryAvailabilityRespBody(errorMessage, res);
 		return respBody;
 	}
+	
+	private String _convertTimingsToString(LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming) {
+		String res = "";
+		for (Entry<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> entry : availableTiming.entrySet()) {
+			res += String.format("%s:\n", entry.getKey());
+			for (Entry<String, ArrayList<TimePeriod>> e : entry.getValue().entrySet()) {
+				res += String.format("%s: ", e.getKey().toString());
+				for (TimePeriod timePeriod : e.getValue()) {
+					res += String.format(" %s - %s |", timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+				}
+				res += "\n";
+			}
+			res += "--------------------------------------------\n";
+		}
+		return res;
+	}
+	
+	private String _convertIDTimingsToString(LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming) {
+		String res = "";
+		for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
+			res += String.format("%s: ", entry.getKey());
+			for (TimePeriod timePeriod : entry.getValue()) {
+				res += String.format(" %s - %s |",
+						timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+			}
+			res += "\n--------------------------------------------\n";
+		}
+		return res;
+	}
 
 	/**
 	 * Make booking service
 	 * 
-	 * @param facilityName - The name of the facility.
+	 * @param facilityType - The type of the facility.
 	 * @param facilityID   - The ID of the facility.
 	 * @param day          - The day of the booking.
 	 * @param startTime    - The start time of the booking.
 	 * @param endTime      - The end time of the booking.
 	 * @return uuid - A unique confirmation ID.
-	 * @throws UnknownFacilityException - Non-existing facility name.
+	 * @throws UnknownFacilityException - Non-existing facility ID.
 	 * @throws BookingFailedException   - Unacceptable booking time. (Does not
 	 *                                  include no available time slot)
 	 */
-	private UUID makeBooking(String facilityName, String facilityID, Day day, Time startTime, Time endTime)
+	private UUID makeBooking(String facilityType, String facilityID, Day day, Time startTime, Time endTime)
 			throws UnknownFacilityException, BookingFailedException {
-		if (!this.facilities.containsKey(facilityName)) {
+		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
 		}
 		UUID uuid = null;
-		Booking newBooking = new Booking(facilityName, facilityID, day, startTime, endTime);
-		boolean success = this.facilities.get(facilityName).get(facilityID).addBooking(newBooking);
+		Booking newBooking = new Booking(facilityType, facilityID, day, startTime, endTime);
+		Facility facility = this.facilities.get(facilityType).get(facilityID);
+		boolean success = facility.addBooking(newBooking);
 		if (success) {
 			uuid = newBooking.getUUID();
 			this.bookings.put(uuid, newBooking);
+			notifyAllCallbacks(facility);
 		}
 		return uuid;
 	}
@@ -510,8 +554,12 @@ public class Server implements CallbackServer {
 		}
 
 		Booking booking = this.bookings.get(bookingID);
-		Facility facility = this.facilities.get(booking.getFacilityName()).get(booking.getFacilityID());
-		return facility.amendBooking(booking, offset);
+		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
+		int statusCode = facility.amendBooking(booking, offset);
+		if (statusCode == 0) {
+			notifyAllCallbacks(facility);
+		}
+		return statusCode;
 	}
 	
 	private ArrayList<String> getFacilityTypes() {
@@ -597,9 +645,9 @@ public class Server implements CallbackServer {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(Day.MONDAY);
 		days.add(Day.TUESDAY);
-		String facilityName = "LT";
+		String facilityType = "LT";
 //		try {
-//			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityName,
+//			LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availability = queryAvailability(facilityType,
 //					days);
 //
 //
@@ -616,27 +664,27 @@ public class Server implements CallbackServer {
 //				System.out.println("--------------------------------------------");
 //			});
 //		} catch (UnknownFacilityException e) {
-//			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+//			System.out.println(String.format("The facility (%s) does not exist.", facilityType));
 //		}
-//		System.out.println(this.serviceQueryAvailability(facilityName, days));
+//		System.out.println(this.serviceQueryAvailability(facilityType, days));
 	}
 
 	private void testMakeBooking() {
-		String facilityName = "LT";
-//		String facilityName = "Lecture Hal";	// Wrong facility name test case
+		String facilityType = "LT";
+//		String facilityType = "Lecture Hal";	// Wrong facility name test case
 		try {
 			this.testQueryAvailability();
-			UUID uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(13, 0), new Time(15, 0));
+			UUID uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(13, 0), new Time(15, 0));
 			System.out.println(uuid); // Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
 			System.out.println(uuid); // Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
 			System.out.println(uuid); // Expected output: A random uuid
-			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(9, 0), new Time(11, 0));
 			System.out.println(uuid); // Expected output: null (No available time slot test case)
-			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(10, 59), new Time(12, 0));
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(10, 59), new Time(12, 0));
 			System.out.println(uuid); // Expected output: null (No available time slot test case)
-			uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(17, 01), new Time(18, 0)); // Expected
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(17, 01), new Time(18, 0)); // Expected
 																											// output:
 																											// Exception
 																											// thrown
@@ -650,16 +698,16 @@ public class Server implements CallbackServer {
 		} catch (BookingFailedException e) {
 			System.out.println(e.getMessage());
 		} catch (UnknownFacilityException e) {
-			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+			System.out.println(String.format("The facility (%s) does not exist.", facilityType));
 		}
 	}
 
 	private void testAmendBooking() {
-		String facilityName = "LT";
+		String facilityType = "LT";
 		try {
 			this.testQueryAvailability();
-			UUID uuid = this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
-			this.makeBooking(facilityName, "LT-1", Day.MONDAY, new Time(9, 30), new Time(10, 30));
+			UUID uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(8, 0), new Time(9, 0));
+			this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(9, 30), new Time(10, 30));
 			this.testQueryAvailability();
 //			int offset = 30;			// Expected statusCode: 0
 //			int offset = 150;			// Expected statusCode: 0
@@ -675,7 +723,7 @@ public class Server implements CallbackServer {
 		} catch (BookingFailedException e) {
 			System.out.println(e.getMessage());
 		} catch (UnknownFacilityException e) {
-			System.out.println(String.format("The facility (%s) does not exist.", facilityName));
+			System.out.println(String.format("The facility (%s) does not exist.", facilityType));
 		}
 	}
 
@@ -691,5 +739,16 @@ public class Server implements CallbackServer {
 		DatagramPacket request = new DatagramPacket(buf, buf.length);
 		socket.receive(request);
 		return request;
+	}
+	
+	// to only be used when expecting a specific reply
+	private Message receiveMessage() throws IOException {
+		byte[] buf = new byte[2048];
+		DatagramPacket request = new DatagramPacket(buf, buf.length);
+		socket.receive(request);
+		byte[] byteBuffer = request.getData();
+		ByteBuffer buffer = ByteBuffer.wrap(byteBuffer);
+		Message requestMessage = Deserializer.deserialize(buffer, Message.class);
+		return requestMessage;
 	}
 }
