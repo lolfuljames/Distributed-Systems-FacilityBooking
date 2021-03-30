@@ -99,7 +99,7 @@ public class Client {
 		}
 	}
 	
-	private Message amendBooking(ArrayList<String> args) {
+	private Message amendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
 		UUID bookingID = UUID.fromString(scanner.nextLine());
 		
@@ -133,11 +133,15 @@ public class Client {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, "", facilityType, true));
+				new QueryAvailabilityReqBody(days, "", facilityType, false));
 		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 		Message responseMessage = this.receiveMessage();
 		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
-		System.out.println(respBody.getPayLoad());
+		if (respBody.getErrorMessage() != null) {
+			System.out.println(respBody.getErrorMessage());
+		} else {
+			System.out.println(respBody.getPayLoad());
+		}
 		
 		System.out.println("Please enter the desired facility ID.");
 		String facilityID = scanner.nextLine().toUpperCase();
@@ -188,7 +192,7 @@ public class Client {
 		}
 		
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityID, "", false));
+				new QueryAvailabilityReqBody(days, facilityID, "", true));
 		
 		return requestMessage;
 		

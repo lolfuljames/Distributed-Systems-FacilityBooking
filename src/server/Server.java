@@ -200,7 +200,7 @@ public class Server implements CallbackServer {
 	public RespBody handleCallback(MonitorAvailabilityReqBody reqBody)
 			throws IOException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException {
 		String payload = "ACK_CALLBACK";
-		String errorMessage = null;
+		String errorMessage = "";
 		MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
 		addCallback(newCallback);
 
@@ -214,7 +214,7 @@ public class Server implements CallbackServer {
 		int statusCode = amendBooking(bookingID, offset);
 		String errorMessage;
 		if (statusCode == 0) {
-			errorMessage = null;
+			errorMessage = "";
 		} else if (statusCode == 1) {
 			errorMessage = "The timeslot is not available!";
 		} else if (statusCode == 2) {
@@ -417,7 +417,7 @@ public class Server implements CallbackServer {
 		Time endTime = reqBody.getEndTime();
 
 		UUID bookingID = null;
-		String errorMessage = null;
+		String errorMessage = "";
 		try {
 			bookingID = this.makeBooking(facilityType, facilityID, day, startTime, endTime);
 		} catch (UnknownFacilityException e) {
@@ -438,7 +438,7 @@ public class Server implements CallbackServer {
 	
 	private RespBody handleQueryFacilityIDs(QueryFacilityIDsReqBody reqBody) {
 		ArrayList<String> facilityTypes = null;
-		String errorMessage = null;
+		String errorMessage = "";
 		
 		String facilityName = reqBody.getFacilityName();
 		try {
@@ -453,10 +453,10 @@ public class Server implements CallbackServer {
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
 		String facilityID = reqBody.getFacilityID();
-		String facilityName = reqBody.getFacilityName();
+		String facilityName = reqBody.getFacilityType();
 		boolean IDBased = reqBody.getIDBased();
 		String res = "";
-		String errorMessage = null;
+		String errorMessage = "";
 		try {
 			if (IDBased) {
 				LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
