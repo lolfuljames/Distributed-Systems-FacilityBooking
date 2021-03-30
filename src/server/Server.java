@@ -448,13 +448,14 @@ public class Server implements CallbackServer {
 	}
 	
 	private boolean cancelBooking(UUID bookingID) {
+		if (!this.bookings.containsKey(bookingID)) {
+			return false;
+		}
+		
 		Booking booking = this.bookings.get(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
-		if (facility.cancelBooking(booking)) {
-			this.bookings.remove(bookingID);
-			return true;
-		}
-		return false;
+		facility.cancelBooking(booking);
+		return true;
 	}
 
 	private RespBody handleQueryFacilityTypes() {
