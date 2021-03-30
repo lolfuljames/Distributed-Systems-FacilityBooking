@@ -8,18 +8,18 @@ public class QueryAvailabilityReqBody extends Body {
 
 	public ArrayList<Day> days;
 	public String facilityID;
-	public String facilityName;
+	public String facilityType;
 	public boolean IDBased;
 	
 	public QueryAvailabilityReqBody() {
 		super();
 	}
 	
-	public QueryAvailabilityReqBody(ArrayList<Day> days, String facilityID, String facilityName, boolean IDBased) {
+	public QueryAvailabilityReqBody(ArrayList<Day> days, String facilityID, String facilityType, boolean IDBased) {
 		// TODO Auto-generated constructor stub
 		this.days = days;
 		this.facilityID = facilityID;
-		this.facilityName = facilityName;
+		this.facilityType = facilityType;
 		this.IDBased = IDBased;
 	}
 	
@@ -31,8 +31,8 @@ public class QueryAvailabilityReqBody extends Body {
 		return this.facilityID;
 	}
 	
-	public String getFacilityName() {
-		return this.facilityName;
+	public String getFacilityType() {
+		return this.facilityType;
 	}
 	
 	public boolean getIDBased() {
@@ -49,7 +49,7 @@ public class QueryAvailabilityReqBody extends Body {
 		if (this.IDBased) {
 			str += String.format("Facility to query: %s\n", this.getFacilityID());
 		} else {
-			str += String.format("Facility to query: %s\n", this.getFacilityName());			
+			str += String.format("Facility to query: %s\n", this.getFacilityType());			
 		}
 		return str;
 	}
