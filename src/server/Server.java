@@ -316,7 +316,7 @@ public class Server implements CallbackServer {
 		respBody = new MonitorAvailabilityRespBody("", message);
 		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
-		this.socket.setSoTimeout(200);
+		this.socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			sendMessage(respMessage, callback.getAddress(), callback.getPort());
 			try {
@@ -327,7 +327,7 @@ public class Server implements CallbackServer {
 				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
 			}
 		}
-		this.socket.setSoTimeout(7 * 24 * 60 * 1000);
+		this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
 	};
 
 	/**

@@ -107,7 +107,7 @@ public class Client {
 				break;
 			}
 			if (awaitReceiveMessage) {
-				socket.setSoTimeout(350);
+				socket.setSoTimeout(Constants.TIMEOUT_MS);
 				while (true) {
 					try {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -258,7 +258,7 @@ public class Client {
 		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityIDs;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -283,7 +283,7 @@ public class Client {
 		Body reqBody = new QueryFacilityTypesReqBody();
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityTypes;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -373,7 +373,7 @@ public class Client {
 		Message responseMessage;
 		String data;
 		
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 //		one second timeout for ACK, check for ACK on callback
 		while (true) {
 			sendMessage(requestMessage, serverAddress, serverPort);
