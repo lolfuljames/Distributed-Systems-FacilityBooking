@@ -32,7 +32,7 @@ public class Client {
 	private InetAddress serverAddress;
 	private DatagramSocket socket = null;
 	private int serverPort = 2222;
-	private Scanner scanner = new Scanner(System.in);
+	private static Scanner scanner = new Scanner(System.in);
 	private InetAddress clientAddress;
 	private int clientPort;
 	/**
@@ -43,9 +43,10 @@ public class Client {
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
 	 * @throws TimeErrorException 
+	 * @throws InterruptedException 
 	 * 
 	 */
-	private void startClient() throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
+	private void startClient() throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException, InterruptedException {
 		// TODO Auto-generated method stub
 		serverAddress = InetAddress.getByName(serverHostname);
 		System.out.println("Address: " + serverAddress.getHostAddress());
@@ -311,7 +312,8 @@ public class Client {
 		}
 	}
 	
-	public void backToMain() {
+	public static void backToMain() throws InterruptedException {
+		Thread.sleep(500);
 		System.out.println("Press enter to return to continue...");
 		scanner.nextLine();
 	}
@@ -343,26 +345,37 @@ public class Client {
 	
 	public static void main(String[] args) {
 		Client client = new Client();
-		try {
-			while (true) client.startClient();
-		} catch (SocketException ex) {
-			System.out.println("Timeout error: " + ex.getMessage());
-			ex.printStackTrace();
-		} catch (IOException ex) {
-			System.out.println("IO error: " + ex.getMessage());
-			ex.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (TimeErrorException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			if (client.getSocket() != null)
-				client.getSocket().close();
+		while (true) {
+			try {
+				client.startClient();
+			} catch (SocketException ex) {
+				System.out.println("Timeout error: " + ex.getMessage());
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				System.out.println("IO error: " + ex.getMessage());
+				ex.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (TimeErrorException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				if (client.getSocket() != null)
+					client.getSocket().close();
+			}
+			try {
+				backToMain();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 }

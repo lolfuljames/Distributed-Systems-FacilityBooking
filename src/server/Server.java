@@ -387,7 +387,7 @@ public class Server implements CallbackServer {
 		Time startTime = reqBody.getStartTime();
 		Time endTime = reqBody.getEndTime();
 
-		UUID bookingID = null;
+		UUID bookingID = new UUID(0, 0);
 		String errorMessage = "";
 		try {
 			bookingID = this.makeBooking(facilityName, facilityID, day, startTime, endTime);
