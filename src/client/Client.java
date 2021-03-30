@@ -54,7 +54,9 @@ public class Client {
 		clientAddress = InetAddress.getLocalHost();
 		clientPort = socket.getLocalPort();
 		String inputStr;
+		boolean awaitReceiveMessage;
 		while (true) {
+			awaitReceiveMessage = false;
 			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
 					+ "1 - Book Facility\n" + "2 - Amend Existing Bookings\n" + "3 - Monitor Facility Bookings\n"
 					+ "Please enter your intended actions: ");
@@ -72,28 +74,28 @@ public class Client {
 			switch (opCode) {
 			case 0:
 		    	requestMessage = this.queryFacilityAvailability(args);
+				awaitReceiveMessage = true;
 				break;
 			case 1:
 		    	requestMessage = this.makeBooking(args);
+				awaitReceiveMessage = true;
 				break;
 			case 2:
 		    	requestMessage = this.amendBooking(args);
+				awaitReceiveMessage = true;
 				break;
 			case 3:
-				MonitorCallback callback = new MonitorCallback("LT-1", 5, InetAddress.getByName("google.com"), 2);
-				
-				requestMessage = new Message(new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.REQUEST),
-						new MonitorAvailabilityReqBody(callback));
-				monitorFacility();
+				this.monitorFacility();
 				break;
 			default:
-				console("Invalid action selected! Press enter to continue...");
-				scanner.nextLine();
+				console("Invalid action selected!");
 				break;
 			}
-			this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-			Message responseMessage = this.receiveMessage();
-			System.out.println(responseMessage);
+			if (awaitReceiveMessage) {
+				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				Message responseMessage = this.receiveMessage();
+				System.out.println(responseMessage);
+			}
 			backToMain();
 		}
 	}
@@ -119,7 +121,7 @@ public class Client {
 		}
 		menu(args);
 		
-		String facilityName = scanner.nextLine().toUpperCase();
+		String facilityType = scanner.nextLine().toUpperCase();
 		args.clear();
 		args.add("Please enter the day of interest.");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -132,7 +134,7 @@ public class Client {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, "", facilityName, false));
+				new QueryAvailabilityReqBody(days, "", facilityType, false));
 		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 		Message responseMessage = this.receiveMessage();
 		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
@@ -268,7 +270,7 @@ public class Client {
 	 * @throws IllegalArgumentException 
 	 */
 	public void registerCallback(MonitorCallback callback) throws IOException, IllegalArgumentException, IllegalAccessException {
-		Header header = new Header(UUID.randomUUID(), 3, 0);
+		Header header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.REQUEST);
 		Body body = new MonitorAvailabilityReqBody(callback);
 		Message requestMessage = new Message(header, body);
 		Message responseMessage;
@@ -296,10 +298,13 @@ public class Client {
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
 				System.out.println(data);
+				header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
+				body = new MonitorAvailabilityRespBody(null, "ACK_CALLBACK");
+				responseMessage = new Message(header,body);
+				sendMessage(responseMessage, serverAddress, serverPort);
 			}
 		} catch (IOException ex) {
-			console("Monitor Interval has ended... Exiting... (press Enter to continue)");
-			scanner.nextLine();
+			console("Monitor Interval has ended... Exiting...");
 		}
 		return;
 	}
