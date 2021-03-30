@@ -35,6 +35,7 @@ public class Client {
 	private static Scanner scanner = new Scanner(System.in);
 	private InetAddress clientAddress;
 	private int clientPort;
+	private Random rand = new Random();
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -436,7 +437,9 @@ public class Client {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
-		socket.send(response);
+		Double currentLoss = rand.nextDouble();
+//		System.out.println("Loss: " + currentLoss);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
 	}
 
 	private Message receiveMessage() throws IOException {
