@@ -3,11 +3,12 @@ package utils.message.response;
 public class MonitorAvailabilityRespBody extends RespBody {
 
 	private String payload;
+	public String errorMessage;
 
 	public MonitorAvailabilityRespBody() {}
 	
 	public MonitorAvailabilityRespBody(String errorMessage, String payload) {
-		super(errorMessage);
+		this.errorMessage = errorMessage;
 		this.setPayload(payload);
 		// TODO Auto-generated constructor stub
 	}
@@ -21,9 +22,12 @@ public class MonitorAvailabilityRespBody extends RespBody {
 	}
 	
 	public String toString() {
-		String str = super.toString();
+		String str = String.format("Error message: %s\n", this.getErrorMessage());
 		str += String.format("Payload: %s\n", this.getPayload());
 		return str;
 	}
 
+	public String getErrorMessage() {
+		return this.errorMessage;
+	}
 }

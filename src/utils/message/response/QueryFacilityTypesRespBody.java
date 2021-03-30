@@ -5,13 +5,14 @@ import java.util.ArrayList;
 public class QueryFacilityTypesRespBody extends RespBody {
 
 	public ArrayList<String> facilityTypes;
+	public String errorMessage;
 	
 	public QueryFacilityTypesRespBody() {
 		
 	}
 	
 	public QueryFacilityTypesRespBody(String errorMessage, ArrayList<String> facilityTypes) {
-		super(errorMessage);
+		this.errorMessage = errorMessage;
 		this.facilityTypes = facilityTypes;
 		// TODO Auto-generated constructor stub
 	}
@@ -20,8 +21,20 @@ public class QueryFacilityTypesRespBody extends RespBody {
 		return this.facilityTypes;
 	}
 	
+	public String getErrorMessage() {
+		return this.errorMessage;
+	}
+	
+	public Object getPayload() {
+		String str = "";
+		for (String facility : this.getFacilityTypes()) {
+			str += String.format("%s ", facility);
+		}
+		return str;
+	}
+	
 	public String toString() {
-		String str = super.toString();
+		String str = String.format("Error message: %s\n", this.getErrorMessage());
 		String facilityTypes = "";
 		for (String facility : this.getFacilityTypes()) {
 			facilityTypes += String.format("%s ", facility);

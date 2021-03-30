@@ -107,7 +107,7 @@ public class Client {
 				break;
 			}
 			if (awaitReceiveMessage) {
-				socket.setSoTimeout(200);
+				socket.setSoTimeout(Constants.TIMEOUT_MS);
 				while (true) {
 					try {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -191,10 +191,10 @@ public class Client {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 				} else {
-					System.out.println(respBody.getPayLoad());
+					System.out.println(respBody.getPayload());
 				}
 				break;
 			} catch (IOException ex) {
@@ -263,13 +263,13 @@ public class Client {
 		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityIDs;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityIDs = null;
 				} else {
@@ -288,13 +288,13 @@ public class Client {
 		Body reqBody = new QueryFacilityTypesReqBody();
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityTypes;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityTypes = null;
 				} else {
@@ -378,7 +378,7 @@ public class Client {
 		Message responseMessage;
 		String data;
 		
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 //		one second timeout for ACK, check for ACK on callback
 		while (true) {
 			sendMessage(requestMessage, serverAddress, serverPort);
