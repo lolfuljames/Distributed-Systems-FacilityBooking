@@ -272,7 +272,7 @@ public class Server implements CallbackServer {
 		String data;
 
 		message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
-		respBody = new MonitorAvailabilityRespBody(null, message);
+		respBody = new MonitorAvailabilityRespBody("", message);
 		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
 		this.socket.setSoTimeout(200);
@@ -432,7 +432,7 @@ public class Server implements CallbackServer {
 	
 	private RespBody handleQueryFacilityTypes() {
 		ArrayList<String> facilityTypes = this.getFacilityTypes();
-		RespBody respBody = new QueryFacilityTypesRespBody(null, facilityTypes);
+		RespBody respBody = new QueryFacilityTypesRespBody("", facilityTypes);
 		return respBody;
 	}
 	
