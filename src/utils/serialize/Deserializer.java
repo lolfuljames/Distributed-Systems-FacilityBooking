@@ -156,7 +156,10 @@ public class Deserializer {
 			return (Object) readEnum(clazz, buffer);
 		} else if (clazz == InetAddress.class) {
 			return (Object) readInetAddress(clazz, buffer);
-		} else {
+		} else if (clazz == Boolean.class || clazz == Boolean.TYPE) {
+			return (Object) readBool(buffer);
+		}
+		else {
 			Object obj = clazz.newInstance();
 
 			for (Field field : clazz.getDeclaredFields()) {
@@ -223,9 +226,15 @@ public class Deserializer {
 			field.set(obj, readString(buffer));
 		} else if (type == Enum.class) {
 			field.set(obj, readEnum(((Class<?>) type), buffer));
+		} else if (type == Boolean.class){
+			field.set(obj,  readBool(buffer));
 		} else {
 			field.set(obj, read(field.getType(), buffer));
 		}
+	}
+	
+	public static Boolean readBool(ByteBuffer buffer) {
+		return buffer.get() == 1 ? true: false;
 	}
 	
 	/*
@@ -309,7 +318,8 @@ public class Deserializer {
 		byte[] byteString = new byte[length];
 
 		buffer.get(byteString, 0, length);
-		return new String(byteString, StandardCharsets.UTF_8);
+		String outputString = new String(byteString, StandardCharsets.UTF_8);
+		return outputString;
 	}
 
 	public static Enum<?> readEnum(Class<?> clazz, ByteBuffer buffer) {
