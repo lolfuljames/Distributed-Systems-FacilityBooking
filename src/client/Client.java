@@ -84,16 +84,24 @@ public class Client {
 				awaitReceiveMessage = true;
 				break;
 			case 3:
-				this.monitorFacility();
+				this.monitorFacility(args);
 				break;
 			default:
 				console("Invalid action selected!");
 				break;
 			}
 			if (awaitReceiveMessage) {
-				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-				Message responseMessage = this.receiveMessage();
-				System.out.println(responseMessage);
+				socket.setSoTimeout(200);
+				while (true) {
+					try {
+						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+						Message responseMessage = this.receiveMessage();
+						System.out.println(responseMessage);
+						break;
+					} catch (IOException ex) {
+						System.out.println("Request transmission failed, resending...");
+					}
+				}
 			}
 			backToMain();
 		}
@@ -134,13 +142,20 @@ public class Client {
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
 				new QueryAvailabilityReqBody(days, "", facilityType, false));
-		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-		Message responseMessage = this.receiveMessage();
-		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
-		if (respBody.getErrorMessage() != null) {
-			System.out.println(respBody.getErrorMessage());
-		} else {
-			System.out.println(respBody.getPayLoad());
+		while (true) {
+			try {
+				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				Message responseMessage = this.receiveMessage();
+				QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
+				if (respBody.getErrorMessage() != null) {
+					System.out.println(respBody.getErrorMessage());
+				} else {
+					System.out.println(respBody.getPayLoad());
+				}
+				break;
+			} catch (IOException ex) {
+				System.out.println("Request transmission failed, resending...");
+			}
 		}
 		
 		System.out.println("Please enter the desired facility ID.");
@@ -169,6 +184,7 @@ public class Client {
 		menu(args);
 		
 		String facilityType = scanner.nextLine().toUpperCase();
+		
 		args.clear();
 		ArrayList<String> facilityIDs = this.queryFacilityIDs(facilityType);
 		args.add("Please enter the facility ID of interest.");
@@ -202,20 +218,50 @@ public class Client {
 		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_IDS, Constants.REQUEST);
 		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
 		Message requestMessage = new Message(header, reqBody);
-		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-		Message responseMessage = this.receiveMessage();
-		QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
-		return respBody.getFacilityIDs();
+		ArrayList<String> facilityIDs;
+		socket.setSoTimeout(200);
+		while (true) {
+			try {
+				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				Message responseMessage = this.receiveMessage();
+				QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
+				if (respBody.getErrorMessage() != null) {
+					System.out.println(respBody.getErrorMessage());
+					facilityIDs = null;
+				} else {
+					facilityIDs = respBody.getFacilityIDs();
+				}
+				break;
+			} catch (IOException ex) {
+				System.out.println("Request transmission failed, resending...");
+			}
+		}
+		return facilityIDs;
 	}
 
 	private ArrayList<String> queryFacilityTypes() throws IllegalArgumentException, IllegalAccessException, IOException {
 		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_TYPES, Constants.REQUEST);
 		Body reqBody = new QueryFacilityTypesReqBody();
 		Message requestMessage = new Message(header, reqBody);
-		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-		Message responseMessage = this.receiveMessage();
-		QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
-		return respBody.getFacilityTypes();
+		ArrayList<String> facilityTypes;
+		socket.setSoTimeout(200);
+		while (true) {
+			try {
+				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
+				Message responseMessage = this.receiveMessage();
+				QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
+				if (respBody.getErrorMessage() != null) {
+					System.out.println(respBody.getErrorMessage());
+					facilityTypes = null;
+				} else {
+					facilityTypes = respBody.getFacilityTypes();
+				}
+				break;
+			} catch (IOException ex) {
+				System.out.println("Request transmission failed, resending...");
+			}
+		}
+		return facilityTypes;
 	}
 
 	/**
@@ -226,25 +272,38 @@ public class Client {
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
 	 */
-	private void monitorFacility() throws IOException, IllegalArgumentException, IllegalAccessException {
-		console("What facility type would you like to be notified of? (Enter 0 to exit)");
-		String facilityType = scanner.nextLine();
-		if (facilityType == "0") {
-			return;
-		}
+	private void monitorFacility(ArrayList<String> args) throws IOException, IllegalArgumentException, IllegalAccessException {
 		
-		
-//		TODO send query 
-		console("Which facility would you like to be notified of? (Enter 0 to exit)");
-		String facilityID = scanner.nextLine();
-		if (facilityID == "0") {
-			return;
+		// obtain user specified facility type
+		ArrayList<String> facilityTypes = this.queryFacilityTypes();
+		args.add("Please enter the facility of interest. (or enter 0 to exit)");
+		for (String facilityType : facilityTypes) {
+			args.add(facilityType);
 		}
+		menu(args);
+		String facilityType = scanner.nextLine().toUpperCase();
+		args.clear();
+		if (facilityType.equals("0")) return;
+		
+		// obtain user specified facility id
+		ArrayList<String> facilityIDs = this.queryFacilityIDs(facilityType);
+		args.add("Please enter the facility ID of interest. (or enter 0 to exit)");
+		for (String facilityID : facilityIDs) {
+			args.add(facilityID);
+		}
+		menu(args);
+		String facilityID = scanner.nextLine().toUpperCase();
+		args.clear();
+		if (facilityID.equals("0")) return;
+		
+		// obtain user specified monitor interval
 		console("Please enter duration of subscription. (Enter 0 to exit)");
 		String inputStr = scanner.nextLine();
+		if (inputStr.equals("0")) return;
 		int monitorInterval;
 		try {
 			monitorInterval = Integer.parseInt(inputStr);
+			if (monitorInterval < 0) throw new NumberFormatException("Negative duration");
 		} catch (NumberFormatException ne) {
 			console("Invalid duration entered! Default value of 10 minutes is set... (Press enter to continue)");
 			scanner.nextLine();
@@ -275,7 +334,7 @@ public class Client {
 		Message responseMessage;
 		String data;
 		
-		socket.setSoTimeout(1000);
+		socket.setSoTimeout(200);
 //		one second timeout for ACK, check for ACK on callback
 		while (true) {
 			sendMessage(requestMessage, serverAddress, serverPort);
