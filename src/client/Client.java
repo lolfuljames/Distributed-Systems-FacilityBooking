@@ -39,6 +39,7 @@ public class Client {
 	private InetAddress clientAddress;
 	private int clientPort;
 	private static boolean DEBUG = false;
+	private Random rand = new Random();
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -431,6 +432,10 @@ public class Client {
 		String facilityID = scanner.nextLine().toUpperCase();
 		args.clear();
 		if (facilityID.equals("0")) return;
+		if (!facilityIDs.contains(facilityID)) {
+			System.out.print("Invalid facility chosen! ");
+			return;
+		}
 		
 		// obtain user specified monitor interval
 		console("Please enter duration of subscription. (Enter 0 to exit)");
@@ -513,7 +518,7 @@ public class Client {
 	
 	public static void backToMain() throws InterruptedException {
 		Thread.sleep(500);
-		System.out.println("Press enter to return to continue...");
+		System.out.println("Press enter to return to menu...");
 		scanner.nextLine();
 	}
 
@@ -529,7 +534,9 @@ public class Client {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
-		socket.send(response);
+		Double currentLoss = rand.nextDouble();
+//		System.out.println("Loss: " + currentLoss);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
 	}
 
 	private Message receiveMessage() throws IOException {

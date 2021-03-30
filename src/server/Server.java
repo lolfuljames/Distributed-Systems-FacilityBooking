@@ -37,6 +37,7 @@ public class Server implements CallbackServer {
 	private Scanner scanner = new Scanner(System.in);
 	private int semanticMode;
 	private Hashtable<UUID, CacheMessageObject> messageCache;
+	private Random rand = new Random();
 
 	public Server(int port) throws SocketException {
 		System.out.println("Initialising the socket for server..." + port);
@@ -52,14 +53,16 @@ public class Server implements CallbackServer {
 		String inputStr;
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to the NTU Facility Booking Service!\n"
 				+ "0 - at-most-once\n" + "1 - at-least-once\n" + "Please enter your preferred sementic mode: ");
-		inputStr = scanner.nextLine();
-		try {
-			semanticMode = Integer.parseInt(inputStr);
-		} catch (NumberFormatException ne) {
-			System.out.println("Invalid semantic selected! Press enter to continue...");
-			scanner.nextLine();
-			return;
-		}
+		semanticMode = 0;
+//		inputStr = scanner.nextLine();
+//		try {
+//			semanticMode = Integer.parseInt(inputStr);
+//		} catch (NumberFormatException ne) {
+//			System.out.println("Invalid semantic selected! Press enter to continue...");
+//			scanner.nextLine();
+//			return;
+//		}
+		this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
 		System.out.println("Servicing the requests...");
 		while (true) {
 			DatagramPacket request = receivePacket();
@@ -86,7 +89,7 @@ public class Server implements CallbackServer {
 			int clientPort = request.getPort();
 			
 //			duplicated client request detected
-			if (this.semanticMode == 0 && messageCache.contains(messageID)) {
+			if (this.semanticMode == 0 && messageCache.containsKey(messageID)) {
 				Message cachedMessage = messageCache.get(messageID).getMessage();
 				sendMessage(cachedMessage, clientAddr, clientPort);
 				continue;
@@ -111,6 +114,7 @@ public class Server implements CallbackServer {
 				break;
 			case Constants.EXTEND_BOOKING:
 				respBody = handleExtendBooking((ExtendBookingReqBody) reqBody);
+				break;
 			case Constants.QUERY_FACILITY_TYPES:
 				respBody = this.handleQueryFacilityTypes();
 				break;
@@ -802,7 +806,9 @@ public class Server implements CallbackServer {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
-		socket.send(response);
+		Double currentLoss = rand.nextDouble();
+//		System.out.println("Loss: " + currentLoss);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
 	}
 
 	private DatagramPacket receivePacket() throws IOException {
