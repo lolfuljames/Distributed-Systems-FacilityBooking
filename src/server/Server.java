@@ -52,14 +52,15 @@ public class Server implements CallbackServer {
 		String inputStr;
 		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to the NTU Facility Booking Service!\n"
 				+ "0 - at-most-once\n" + "1 - at-least-once\n" + "Please enter your preferred sementic mode: ");
-		inputStr = scanner.nextLine();
-		try {
-			semanticMode = Integer.parseInt(inputStr);
-		} catch (NumberFormatException ne) {
-			System.out.println("Invalid semantic selected! Press enter to continue...");
-			scanner.nextLine();
-			return;
-		}
+		semanticMode = 0;
+//		inputStr = scanner.nextLine();
+//		try {
+//			semanticMode = Integer.parseInt(inputStr);
+//		} catch (NumberFormatException ne) {
+//			System.out.println("Invalid semantic selected! Press enter to continue...");
+//			scanner.nextLine();
+//			return;
+//		}
 		System.out.println("Servicing the requests...");
 		while (true) {
 			DatagramPacket request = receivePacket();
@@ -111,6 +112,7 @@ public class Server implements CallbackServer {
 				break;
 			case Constants.EXTEND_BOOKING:
 				respBody = handleExtendBooking((ExtendBookingReqBody) reqBody);
+				break;
 			case Constants.QUERY_FACILITY_TYPES:
 				respBody = this.handleQueryFacilityTypes();
 				break;
