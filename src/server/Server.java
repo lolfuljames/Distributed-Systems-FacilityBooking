@@ -478,7 +478,7 @@ public class Server implements CallbackServer {
 		if (success) {
 			errorMessage = "";
 		} else {
-			errorMessage = "Invalid UUID";
+			errorMessage = "Transaction failed... Invalid Booking ID! This booking does not exists!";
 		}
 
 		RespBody respBody = new CancelBookingRespBody(errorMessage, bookingID);
@@ -491,6 +491,7 @@ public class Server implements CallbackServer {
 		}
 		
 		Booking booking = this.bookings.get(bookingID);
+		this.bookings.remove(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
 		facility.cancelBooking(booking);
 		return true;
