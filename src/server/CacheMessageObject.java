@@ -14,6 +14,8 @@ public class CacheMessageObject {
 	
 	public CacheMessageObject(Message message, long lastAccessedTime) throws TimeErrorException {
 		// TODO Auto-generated constructor stub
+		this.message = message;
+		this.lastAccessedTime = lastAccessedTime;
 	}
 
 	public Message getMessage() {

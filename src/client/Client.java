@@ -35,6 +35,7 @@ public class Client {
 	private static Scanner scanner = new Scanner(System.in);
 	private InetAddress clientAddress;
 	private int clientPort;
+	private Random rand = new Random();
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -107,7 +108,7 @@ public class Client {
 				break;
 			}
 			if (awaitReceiveMessage) {
-				socket.setSoTimeout(200);
+				socket.setSoTimeout(Constants.TIMEOUT_MS);
 				while (true) {
 					try {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
@@ -186,10 +187,10 @@ public class Client {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 				} else {
-					System.out.println(respBody.getPayLoad());
+					System.out.println(respBody.getPayload());
 				}
 				break;
 			} catch (IOException ex) {
@@ -258,13 +259,13 @@ public class Client {
 		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityIDs;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityIDsRespBody respBody = (QueryFacilityIDsRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityIDs = null;
 				} else {
@@ -283,13 +284,13 @@ public class Client {
 		Body reqBody = new QueryFacilityTypesReqBody();
 		Message requestMessage = new Message(header, reqBody);
 		ArrayList<String> facilityTypes;
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 				Message responseMessage = this.receiveMessage();
 				QueryFacilityTypesRespBody respBody = (QueryFacilityTypesRespBody) responseMessage.getBody();
-				if (respBody.getErrorMessage() != null) {
+				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
 					facilityTypes = null;
 				} else {
@@ -334,6 +335,10 @@ public class Client {
 		String facilityID = scanner.nextLine().toUpperCase();
 		args.clear();
 		if (facilityID.equals("0")) return;
+		if (!facilityIDs.contains(facilityID)) {
+			System.out.print("Invalid facility chosen! ");
+			return;
+		}
 		
 		// obtain user specified monitor interval
 		console("Please enter duration of subscription. (Enter 0 to exit)");
@@ -373,7 +378,7 @@ public class Client {
 		Message responseMessage;
 		String data;
 		
-		socket.setSoTimeout(200);
+		socket.setSoTimeout(Constants.TIMEOUT_MS);
 //		one second timeout for ACK, check for ACK on callback
 		while (true) {
 			sendMessage(requestMessage, serverAddress, serverPort);
@@ -416,7 +421,7 @@ public class Client {
 	
 	public static void backToMain() throws InterruptedException {
 		Thread.sleep(500);
-		System.out.println("Press enter to return to continue...");
+		System.out.println("Press enter to return to menu...");
 		scanner.nextLine();
 	}
 
@@ -432,7 +437,9 @@ public class Client {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
-		socket.send(response);
+		Double currentLoss = rand.nextDouble();
+//		System.out.println("Loss: " + currentLoss);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
 	}
 
 	private Message receiveMessage() throws IOException {

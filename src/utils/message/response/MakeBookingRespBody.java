@@ -12,7 +12,8 @@ import java.util.UUID;
 public class MakeBookingRespBody extends RespBody {
 	
 	public UUID bookingID;
-
+	public String errorMessage;
+	
 	public MakeBookingRespBody() {
 		super();
 	}
@@ -21,8 +22,8 @@ public class MakeBookingRespBody extends RespBody {
 	 * @param errorMessage
 	 */
 	public MakeBookingRespBody(String errorMessage, UUID bookingID) {
-		super(errorMessage);
 		this.bookingID = bookingID;
+		this.errorMessage = errorMessage;
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -31,9 +32,17 @@ public class MakeBookingRespBody extends RespBody {
 	}
 	
 	public String toString() {
-		String str = super.toString();
+		String str = String.format("Error message: %s\n", this.getErrorMessage());
 		str += String.format("Booking ID: %s\n", this.getBookingID().toString());
 		return str;
+	}
+
+	public String getErrorMessage() {
+		return this.errorMessage;
+	}
+	
+	public Object getPayload() {
+		return this.bookingID;
 	}
 
 }

@@ -50,7 +50,7 @@ public class Serializer {
 			buffer.put((byte) (((Boolean) obj) ? 1 : 0));
 		} else if (obj instanceof Integer) {
 			buffer.putInt((Integer) obj);
-		} else if (obj.getClass().isEnum()) {
+		} else if (obj != null && obj.getClass().isEnum()) {
 			buffer.put((byte) ((Enum<?>) obj).ordinal());
 		} else if (obj instanceof List<?>) {
 			buffer.putInt(((List<?>) obj).size());
