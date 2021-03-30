@@ -239,5 +239,13 @@ public class Facility {
 		return statusCode;
 	}
 
+	public boolean cancelBooking(Booking booking) {
+		if (!this.bookings.containsKey(booking.getUUID())) {
+			return false;
+		}
+		
+		this.bookings.get(booking.getDay()).remove(booking);
+		return true;
+	}
 
 }

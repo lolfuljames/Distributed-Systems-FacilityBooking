@@ -116,6 +116,9 @@ public class Server implements CallbackServer {
 			case Constants.QUERY_FACILITY_IDS:
 				respBody = this.handleQueryFacilityIDs((QueryFacilityIDsReqBody) reqBody);
 				break;
+			case Constants.CANCEL_BOOKING:
+				respBody = this.handleCancelBooking((CancelBookingReqBody) reqBody);
+				break;
 			}
 
 			responseMessage = new Message(header, respBody);
@@ -416,7 +419,7 @@ public class Server implements CallbackServer {
 		Time startTime = reqBody.getStartTime();
 		Time endTime = reqBody.getEndTime();
 
-		UUID bookingID = new UUID(0, 0);
+		UUID bookingID = Constants.INVALID_UUID;
 		String errorMessage = "";
 		try {
 			bookingID = this.makeBooking(facilityType, facilityID, day, startTime, endTime);
@@ -430,6 +433,30 @@ public class Server implements CallbackServer {
 		return respBody;
 	}
 	
+	private RespBody handleCancelBooking(CancelBookingReqBody reqBody) {
+		UUID bookingID = reqBody.getBookingID();
+		boolean success = this.cancelBooking(bookingID);
+		String errorMessage;
+		if (success) {
+			errorMessage = "";
+		} else {
+			errorMessage = "Invalid UUID";
+		}
+
+		RespBody respBody = new CancelBookingRespBody(errorMessage);
+		return respBody;
+	}
+	
+	private boolean cancelBooking(UUID bookingID) {
+		Booking booking = this.bookings.get(bookingID);
+		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
+		if (facility.cancelBooking(booking)) {
+			this.bookings.remove(bookingID);
+			return true;
+		}
+		return false;
+	}
+
 	private RespBody handleQueryFacilityTypes() {
 		ArrayList<String> facilityTypes = this.getFacilityTypes();
 		RespBody respBody = new QueryFacilityTypesRespBody("", facilityTypes);
@@ -524,7 +551,7 @@ public class Server implements CallbackServer {
 		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
 		}
-		UUID uuid = null;
+		UUID uuid = Constants.INVALID_UUID;
 		Booking newBooking = new Booking(facilityType, facilityID, day, startTime, endTime);
 		Facility facility = this.facilities.get(facilityType).get(facilityID);
 		boolean success = facility.addBooking(newBooking);

@@ -59,7 +59,7 @@ public class Client {
 			awaitReceiveMessage = false;
 			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
 					+ "1 - Book Facility\n" + "2 - Amend Existing Bookings\n" + "3 - Monitor Facility Bookings\n"
-					+ "Please enter your intended actions: ");
+					+ "4 - Cancel Existing Bookings\n" + "Please enter your intended actions: ");
 			inputStr = scanner.nextLine();
 			int opCode;
 			try {
@@ -87,6 +87,10 @@ public class Client {
 			case 3:
 				this.monitorFacility();
 				break;
+			case 4:
+				requestMessage = this.cancelBooking(args);
+				awaitReceiveMessage = true;
+				break;
 			default:
 				console("Invalid action selected!");
 				break;
@@ -100,6 +104,16 @@ public class Client {
 		}
 	}
 	
+	private Message cancelBooking(ArrayList<String> args) throws IllegalArgumentException {
+		System.out.println("Please enter the booking ID.");
+		UUID bookingID = UUID.fromString(scanner.nextLine());
+
+		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.CANCEL_BOOKING, Constants.REQUEST),
+				new CancelBookingReqBody(bookingID));
+		
+		return requestMessage;
+	}
+
 	private Message amendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
 		UUID bookingID = UUID.fromString(scanner.nextLine());

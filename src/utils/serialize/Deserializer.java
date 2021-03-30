@@ -279,6 +279,9 @@ public class Deserializer {
 			case Constants.QUERY_FACILITY_IDS:
 				reqBody = read(QueryFacilityIDsReqBody.class, buffer);
 				break;
+			case Constants.CANCEL_BOOKING:
+				reqBody = read(CancelBookingReqBody.class, buffer);
+				break;
 			}
 			return reqBody;
 		} else {
@@ -303,6 +306,9 @@ public class Deserializer {
 				break;
 			case Constants.QUERY_FACILITY_IDS:
 				respBody = read(QueryFacilityIDsRespBody.class, buffer);
+				break;
+			case Constants.CANCEL_BOOKING:
+				respBody = read(CancelBookingRespBody.class, buffer);
 				break;
 			}
 			return respBody;
