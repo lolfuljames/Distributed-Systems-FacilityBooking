@@ -405,7 +405,7 @@ public class Server implements CallbackServer {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityType,
+	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityTypeBased(String facilityType,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
@@ -428,14 +428,14 @@ public class Server implements CallbackServer {
 	
 	private LinkedHashMap<Day, ArrayList<TimePeriod>> queryAvailabilityIDBased(String facilityID,
 			ArrayList<Day> days) throws UnknownFacilityException {
-		String facilityName = facilityID.split("-")[0];
-		if (!this.facilities.containsKey(facilityName)) {
+		String facilityType = facilityID.split("-")[0];
+		if (!this.facilities.containsKey(facilityType) || !this.facilities.get(facilityType).containsKey(facilityID)) {
 			throw new UnknownFacilityException();
 		}
-		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityName);
+		LinkedHashMap<String, Facility> facilityList = this.facilities.get(facilityType);
 		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = new LinkedHashMap<Day, ArrayList<TimePeriod>>();
 		
-		return this.facilities.get(facilityName).get(facilityID).getAvailableTiming(days);
+		return this.facilities.get(facilityType).get(facilityID).getAvailableTiming(days);
 
 //		facilityList.forEach((_facilityID, facility) -> {
 //			LinkedHashMap<Day, ArrayList<TimePeriod>> aTime = facility.getAvailableTiming(days);
@@ -504,14 +504,14 @@ public class Server implements CallbackServer {
 	}
 	
 	private RespBody handleQueryFacilityIDs(QueryFacilityIDsReqBody reqBody) {
-		ArrayList<String> facilityTypes = null;
+		ArrayList<String> facilityTypes = new ArrayList<String>();
 		String errorMessage = "";
 		
-		String facilityName = reqBody.getFacilityName();
+		String facilityType= reqBody.getFacilityType();
 		try {
-			facilityTypes = this.getFacilityIDs(facilityName);
+			facilityTypes = this.getFacilityIDs(facilityType);
 		} catch (UnknownFacilityException e) {
-			errorMessage = String.format("The facility (%s) does not exist.", facilityName);
+			errorMessage = String.format("Error! The facility (%s) does not exist.", facilityType);
 		}
 		RespBody respBody = new QueryFacilityTypesRespBody(errorMessage, facilityTypes);
 		return respBody;
@@ -520,7 +520,7 @@ public class Server implements CallbackServer {
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
 		String facilityID = reqBody.getFacilityID();
-		String facilityName = reqBody.getFacilityType();
+		String facilityType = reqBody.getFacilityType();
 		boolean IDBased = reqBody.getIDBased();
 		String res = "";
 		String errorMessage = "";
@@ -532,12 +532,16 @@ public class Server implements CallbackServer {
 				res += this._convertIDTimingsToString(availableTiming);
 			} else {
 				LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
-						.queryAvailabilityNameBased(facilityName, days);
-				res += String.format("Availability for %s:\n", facilityName);
+						.queryAvailabilityTypeBased(facilityType, days);
+				res += String.format("Availability for %s:\n", facilityType);
 			  res += this._convertTimingsToString(availableTiming);
 			}
 		} catch (UnknownFacilityException e) {
-			errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityID);
+			if (IDBased) {
+				errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityID);				
+			} else {
+				errorMessage = String.format("Error! The facility (%s) does not exist.\n", facilityType);
+			}
 		}
 
 		RespBody respBody = new QueryAvailabilityRespBody(errorMessage, res);
@@ -637,12 +641,12 @@ public class Server implements CallbackServer {
 		return facilityTypes;
 	}
 	
-	private ArrayList<String> getFacilityIDs(String facilityName) throws UnknownFacilityException {
-		if (!this.facilities.containsKey(facilityName)) {
+	private ArrayList<String> getFacilityIDs(String facilityType) throws UnknownFacilityException {
+		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
 		}
 		ArrayList<String> facilityIDs = new ArrayList<String>();
-		this.facilities.get(facilityName).forEach((facility, temp) -> {
+		this.facilities.get(facilityType).forEach((facility, temp) -> {
 			facilityIDs.add(facility);
 		});
 		return facilityIDs;

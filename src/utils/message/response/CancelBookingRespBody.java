@@ -19,8 +19,18 @@ public class CancelBookingRespBody extends RespBody {
 		return this.errorMessage;
 	}
 	
-	public Object getPayload() {
+	public UUID getBookingID() {
 		return this.bookingID;
+	}
+	
+	public Object getPayload() {
+		String str = "";
+		if (!this.getErrorMessage().equals("")) {
+			str += String.format("Booking cancellation failed! %s\n", this.getErrorMessage());
+		} else {
+			str += "Booking is cancelled successfully.\n";
+		}
+		return str;
 	}
 	
 	public String toString() {

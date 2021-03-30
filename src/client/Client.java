@@ -7,7 +7,10 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.*;
-
+import java.util.regex.Pattern;
+import java.awt.datatransfer.StringSelection;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
 import server.Day;
 import server.Time;
 import server.TimeErrorException;
@@ -35,6 +38,7 @@ public class Client {
 	private static Scanner scanner = new Scanner(System.in);
 	private InetAddress clientAddress;
 	private int clientPort;
+	private static boolean DEBUG = false;
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -81,26 +85,46 @@ public class Client {
 			switch (opCode) {
 			case Constants.QUERY_AVAILABILITY:
 		    	requestMessage = this.queryFacilityAvailability(args);
-				awaitReceiveMessage = true;
+		    	if (requestMessage == null) {
+					awaitReceiveMessage = false;
+		    	} else {
+					awaitReceiveMessage = true;
+		    	}
 				break;
 			case Constants.MAKE_BOOKING:
 		    	requestMessage = this.makeBooking(args);
-				awaitReceiveMessage = true;
+		    	if (requestMessage == null) {
+					awaitReceiveMessage = false;
+		    	} else {
+					awaitReceiveMessage = true;
+		    	}
 				break;
 			case Constants.AMEND_BOOKING:
 		    	requestMessage = this.amendBooking(args);
-				awaitReceiveMessage = true;
+		    	if (requestMessage == null) {
+					awaitReceiveMessage = false;
+		    	} else {
+					awaitReceiveMessage = true;
+		    	}
 				break;
 			case Constants.MONITOR_AVAILABILITY:
 				this.monitorFacility(args);
 				break;
 			case Constants.CANCEL_BOOKING:
 				requestMessage = this.cancelBooking(args);
-				awaitReceiveMessage = true;
+		    	if (requestMessage == null) {
+					awaitReceiveMessage = false;
+		    	} else {
+					awaitReceiveMessage = true;
+		    	}
 				break;
 			case Constants.EXTEND_BOOKING:
 		    	requestMessage = this.extendBooking(args);
-				awaitReceiveMessage = true;
+		    	if (requestMessage == null) {
+					awaitReceiveMessage = false;
+		    	} else {
+					awaitReceiveMessage = true;
+		    	}
 				break;
 			default:
 				console("Invalid action selected!");
@@ -113,10 +137,17 @@ public class Client {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 						Message responseMessage = this.receiveMessage();
 						RespBody respBody = (RespBody) responseMessage.getBody();
-						if (respBody.getErrorMessage() != null) {
+						if (!respBody.getErrorMessage().equals("")) {
 							System.out.println(respBody.getErrorMessage());
 						} else {
 							System.out.println(respBody.getPayload());
+							if (opCode == Constants.MAKE_BOOKING) {
+								MakeBookingRespBody tempBody = (MakeBookingRespBody) respBody;
+								StringSelection stringSelection = new StringSelection(tempBody.getBookingID().toString());
+								Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+								clipboard.setContents(stringSelection, null);
+								System.out.println("BookingID has been copied to clipboard! Please save for future references..");
+							}
 						}
 						break;
 					} catch (IOException ex) {
@@ -130,7 +161,10 @@ public class Client {
 	
 	private Message cancelBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
-		UUID bookingID = UUID.fromString(scanner.nextLine());
+		UUID bookingID = scanBookingID();
+		if (bookingID == null) {
+			return null;
+		}
 
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.CANCEL_BOOKING, Constants.REQUEST),
 				new CancelBookingReqBody(bookingID));
@@ -140,10 +174,16 @@ public class Client {
 
 	private Message amendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
-		UUID bookingID = UUID.fromString(scanner.nextLine());
+		UUID bookingID = scanBookingID();
+		if (bookingID == null) {
+			return null;
+		}
 		
 		System.out.println("Please enter the offset (in minutes) that you wish to advance/postpone. (negative number to advance, positive number to postpone)");
-		int offset = Integer.parseInt(scanner.nextLine());
+		int offset = scanInteger();
+		if (offset == Integer.MAX_VALUE) {
+			return null;
+		}
 
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.AMEND_BOOKING, Constants.REQUEST),
 				new AmendBookingReqBody(bookingID, offset));
@@ -151,12 +191,29 @@ public class Client {
 		return requestMessage;
 	}	
 	
+	private UUID scanBookingID() {
+		UUID bookingID;
+		try {
+			bookingID = UUID.fromString(scanner.nextLine());
+		} catch (IllegalArgumentException e) {
+			System.out.println("Error! The booking ID does not exist.");
+			return null;
+		}
+		return bookingID;
+	}
+
 	private Message extendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
-		UUID bookingID = UUID.fromString(scanner.nextLine());
+		UUID bookingID = scanBookingID();
+		if (bookingID == null) {
+			return null;
+		}
 		
 		System.out.println("Please enter the duration you wish to extend (in minutes)");
-		int offset = Integer.parseInt(scanner.nextLine());
+		int offset = scanInteger();
+		if (offset == Integer.MAX_VALUE) {
+			return null;
+		}
 
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.EXTEND_BOOKING, Constants.REQUEST),
 				new ExtendBookingReqBody(bookingID, offset));
@@ -164,15 +221,16 @@ public class Client {
 		return requestMessage;
 	}
 
-	private Message makeBooking(ArrayList<String> args) throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
-		ArrayList<String> facilityTypes = this.queryFacilityTypes();
-		args.add("Please choose the facility of interest.");
-		for (String facilityType : facilityTypes) {
-			args.add(facilityType);
+	private int scanInteger() {		
+		try {
+			return Integer.parseInt(scanner.nextLine());
+		} catch (NumberFormatException e) {
+			System.out.println("Error! Offset can only be integer.");
+			return Integer.MAX_VALUE;
 		}
-		menu(args);
-		
-		String facilityType = scanner.nextLine().toUpperCase();
+	}
+
+	private Message makeBooking(ArrayList<String> args) throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
 		args.clear();
 		args.add("Please enter the day of interest.");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -181,18 +239,35 @@ public class Client {
 		menu(args);
 		
 		String dayInput = scanner.nextLine().toUpperCase();
-		Day selectedDay = Day.valueOf(dayInput);
+		Day selectedDay;
+		try {
+			selectedDay = Day.valueOf(dayInput);
+		} catch (IllegalArgumentException e) {
+			System.out.println("Error! Input is not an accepted day.");
+			return null;
+		}
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
+		
+		ArrayList<String> facilityTypes = this.queryFacilityTypes();
+		args.clear();
+		args.add("Please choose the facility of interest.");
+		for (String facilityType : facilityTypes) {
+			args.add(facilityType);
+		}
+		menu(args);
+		
+		String facilityType = scanner.nextLine().toUpperCase();
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
 				new QueryAvailabilityReqBody(days, "", facilityType, false));
 		while (true) {
 			try {
 				this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
-				Message responseMessage = this.receiveMessage();
+				Message responseMessage = this.receiveMessage();				
 				QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
 				if (!respBody.getErrorMessage().equals("")) {
 					System.out.println(respBody.getErrorMessage());
+					return null;
 				} else {
 					System.out.println(respBody.getPayload());
 				}
@@ -206,7 +281,14 @@ public class Client {
 		String facilityID = scanner.nextLine().toUpperCase();
 		
 		System.out.println("Please enter start time. (in HH:MM format)");
-		String[] startTimeInput = scanner.nextLine().split(":");
+		String inputTime = scanner.nextLine();
+		Pattern timePattern = Pattern.compile("^\\d*:\\d*$");
+		
+		if (!timePattern.matcher(inputTime).find()) {
+			System.out.println("Invalid time format entered!...");
+			return null;
+		}
+		String[] startTimeInput = inputTime.split(":");
 		Time startTime = new Time(Integer.parseInt(startTimeInput[0]), Integer.parseInt(startTimeInput[1]));
 		
 		System.out.println("Please enter end time. (in HH:MM format)");
@@ -229,15 +311,11 @@ public class Client {
 		
 		String facilityType = scanner.nextLine().toUpperCase();
 		
-		args.clear();
 		ArrayList<String> facilityIDs = this.queryFacilityIDs(facilityType);
-		args.add("Please enter the facility ID of interest.");
-		for (String facilityID : facilityIDs) {
-			args.add(facilityID);
+		if (facilityIDs == null) {
+			return null;
 		}
-		menu(args);
 		
-		String facilityID = scanner.nextLine().toUpperCase();
 		args.clear();
 		args.add("Please choose the day of interest. (Separate day by a white space if querying for multiple days)");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -247,9 +325,23 @@ public class Client {
 		
 		String[] daysInput = scanner.nextLine().toUpperCase().split(" ");
 		ArrayList<Day> days = new ArrayList<Day>();
-		for (String day : daysInput) {
-			days.add(Day.valueOf(day));
+		try {
+			for (String day : daysInput) {
+				days.add(Day.valueOf(day));
+			}
+		} catch (IllegalArgumentException e) {
+			System.out.println("Error! Input is not an accepted day.");
+			return null;
 		}
+
+		args.clear();
+		args.add("Please enter the facility ID of interest.");
+		for (String facilityID : facilityIDs) {
+			args.add(facilityID);
+		}
+		menu(args);
+		
+		String facilityID = scanner.nextLine().toUpperCase();
 		
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
 				new QueryAvailabilityReqBody(days, facilityID, "", true));
@@ -455,24 +547,37 @@ public class Client {
 		while (true) {
 			try {
 				client.startClient();
-			} catch (SocketException ex) {
-				System.out.println("Timeout error: " + ex.getMessage());
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				System.out.println("IO error: " + ex.getMessage());
-				ex.printStackTrace();
+			} catch (SocketException e) {
+				System.out.println("Timeout error: " + e.getMessage());
+				if (DEBUG) {
+					e.printStackTrace();
+				}
+			} catch (IOException e) {
+				System.out.println("IO error: " + e.getMessage());
+				if (DEBUG) {
+					e.printStackTrace();
+				}
 			} catch (IllegalArgumentException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				if (DEBUG) {
+					e.printStackTrace();
+				}
 			} catch (IllegalAccessException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				if (DEBUG) {
+					e.printStackTrace();
+				}
 			} catch (TimeErrorException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Time error: " + e.getMessage());
+				if (DEBUG) {
+					e.printStackTrace();
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				if (DEBUG) {
+					e.printStackTrace();
+				}
 			} finally {
 				if (client.getSocket() != null)
 					client.getSocket().close();
