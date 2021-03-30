@@ -133,7 +133,7 @@ public class Client {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, null, facilityName, true));
+				new QueryAvailabilityReqBody(days, "", facilityType, true));
 		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 		Message responseMessage = this.receiveMessage();
 		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
@@ -188,7 +188,7 @@ public class Client {
 		}
 		
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityID, null, false));
+				new QueryAvailabilityReqBody(days, facilityID, "", false));
 		
 		return requestMessage;
 		

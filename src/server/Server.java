@@ -299,9 +299,9 @@ public class Server implements CallbackServer {
 	private void notifyAllCallbacks(Facility facility) {
 		String message = "";
 		ArrayList<Day> allDays = Day.getAllDays();
-		LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming;
+		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming;
 		try {
-			availableTiming = this.queryAvailability(facility.getType(), allDays);
+			availableTiming = this.queryAvailabilityIDBased(facility.getFacilityID(), allDays);
 		} catch (UnknownFacilityException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -309,7 +309,7 @@ public class Server implements CallbackServer {
 			return;
 		}
 		message += String.format("Availability for %s:\n", facility.getType());
-		message += _convertTimingsToString(availableTiming);
+		message += _convertIDTimingsToString(availableTiming);
 		
 		final String callbackMessage = message;
 		callbacks.forEach(callback -> {
@@ -364,7 +364,7 @@ public class Server implements CallbackServer {
 	 * 
 	 * @throws UnknownFacilityException - Non-existing facility name.
 	 */
-	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityName,
+	private LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> queryAvailabilityNameBased(String facilityType,
 			ArrayList<Day> days) throws UnknownFacilityException {
 		if (!this.facilities.containsKey(facilityType)) {
 			throw new UnknownFacilityException();
@@ -462,7 +462,7 @@ public class Server implements CallbackServer {
 				LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming = this
 						.queryAvailabilityIDBased(facilityID, days);
 				res += String.format("Availability for %s:\n", facilityID);
-				res += this._convertTimingsToString(availableTiming);
+				res += this._convertIDTimingsToString(availableTiming);
 			} else {
 				LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming = this
 						.queryAvailabilityNameBased(facilityName, days);
@@ -489,6 +489,19 @@ public class Server implements CallbackServer {
 				res += "\n";
 			}
 			res += "--------------------------------------------\n";
+		}
+		return res;
+	}
+	
+	private String _convertIDTimingsToString(LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming) {
+		String res = "";
+		for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
+			res += String.format("%s: ", entry.getKey());
+			for (TimePeriod timePeriod : entry.getValue()) {
+				res += String.format(" %s - %s |",
+						timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
+			}
+			res += "\n--------------------------------------------\n";
 		}
 		return res;
 	}
