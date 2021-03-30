@@ -101,7 +101,6 @@ public class Server implements CallbackServer {
 				break;
 			case Constants.AMEND_BOOKING:
 				respBody = handleAmendBooking((AmendBookingReqBody) reqBody);
-
 				break;
 			case Constants.MONITOR_AVAILABILITY:
 				respBody = handleCallback((MonitorAvailabilityReqBody) reqBody);
@@ -110,6 +109,8 @@ public class Server implements CallbackServer {
 //				    notifyAllCallbacks("Received with thanks");
 //			    }
 				break;
+			case Constants.EXTEND_BOOKING:
+				respBody = handleExtendBooking((ExtendBookingReqBody) reqBody);
 			case Constants.QUERY_FACILITY_TYPES:
 				respBody = this.handleQueryFacilityTypes();
 				break;
@@ -228,6 +229,43 @@ public class Server implements CallbackServer {
 
 		RespBody respBody = new AmendBookingRespBody(errorMessage);
 		return respBody;
+	}
+	
+	public RespBody handleExtendBooking(ExtendBookingReqBody reqBody) {
+		UUID bookingID = reqBody.getBookingID();
+		int offset = reqBody.getOffset();
+		int statusCode = extendBooking(bookingID, offset);
+		String errorMessage;
+		if (statusCode == 0) {
+			errorMessage = "";
+		} else if (statusCode == 1) {
+			errorMessage = "The timeslot is not available!";
+		} else if (statusCode == 2) {
+			errorMessage = "The timeslot spans across two different days!";
+		} else if (statusCode == 3) {
+			errorMessage = "The timeslot exceeds our operating hours!";
+		} else if (statusCode == 4) {
+			errorMessage = "Invalid UUID";
+		} else
+			errorMessage = "Unexpected Error Occured!";
+
+		RespBody respBody = new AmendBookingRespBody(errorMessage);
+		return respBody;
+	}
+	
+	private int extendBooking(UUID bookingID, int offset) {
+		// TODO Auto-generated method stub
+		if (!this.bookings.containsKey(bookingID)) {
+			return 4;
+		}
+
+		Booking booking = this.bookings.get(bookingID);
+		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
+		int statusCode = facility.extendBooking(booking, offset);
+		if (statusCode == 0) {
+			notifyAllCallbacks(facility);
+		}
+		return statusCode;
 	}
 
 	public void getBooking() {
