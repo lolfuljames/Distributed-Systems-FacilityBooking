@@ -54,12 +54,19 @@ public class Client {
 		clientAddress = InetAddress.getLocalHost();
 		clientPort = socket.getLocalPort();
 		String inputStr;
+		ArrayList<String> menuArgs = new ArrayList<String>();
+		menuArgs.add("Welcome to the NTU Facility Booking System!");
+		menuArgs.add(String.format("%d | Query Facility Availability", Constants.QUERY_AVAILABILITY));
+		menuArgs.add(String.format("%d | Book Facility", Constants.MAKE_BOOKING));
+		menuArgs.add(String.format("%d | Amend Existing Booking", Constants.AMEND_BOOKING));
+		menuArgs.add(String.format("%d | Monitor Facility Bookings", Constants.MONITOR_AVAILABILITY));
+		menuArgs.add(String.format("%d | Cancel Existing Booking", Constants.CANCEL_BOOKING));
+		menuArgs.add(String.format("%d | Extend Existing Booking", Constants.EXTEND_BOOKING));
 		boolean awaitReceiveMessage;
 		while (true) {
 			awaitReceiveMessage = false;
-			console("Welcome to the NTU Facility Booking System!\n" + "0 - Query Facility Availability\n"
-					+ "1 - Book Facility\n" + "2 - Amend Existing Bookings\n" + "3 - Monitor Facility Bookings\n"
-					+ "4 - Cancel Existing Bookings\n" + "Please enter your intended actions: ");
+			menu(menuArgs);
+			System.out.println("Please enter your intended actions: ");
 			inputStr = scanner.nextLine();
 			int opCode;
 			try {
@@ -72,23 +79,27 @@ public class Client {
 			Message requestMessage = null;
 			ArrayList<String> args = new ArrayList<String>();
 			switch (opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 		    	requestMessage = this.queryFacilityAvailability(args);
 				awaitReceiveMessage = true;
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 		    	requestMessage = this.makeBooking(args);
 				awaitReceiveMessage = true;
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 		    	requestMessage = this.amendBooking(args);
 				awaitReceiveMessage = true;
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				this.monitorFacility(args);
 				break;
-			case 4:
+			case Constants.CANCEL_BOOKING:
 				requestMessage = this.cancelBooking(args);
+				awaitReceiveMessage = true;
+				break;
+			case Constants.EXTEND_BOOKING:
+		    	requestMessage = this.extendBooking(args);
 				awaitReceiveMessage = true;
 				break;
 			default:
@@ -131,6 +142,19 @@ public class Client {
 
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.AMEND_BOOKING, Constants.REQUEST),
 				new AmendBookingReqBody(bookingID, offset));
+		
+		return requestMessage;
+	}	
+	
+	private Message extendBooking(ArrayList<String> args) throws IllegalArgumentException {
+		System.out.println("Please enter the booking ID.");
+		UUID bookingID = UUID.fromString(scanner.nextLine());
+		
+		System.out.println("Please enter the duration you wish to extend (in minutes)");
+		int offset = Integer.parseInt(scanner.nextLine());
+
+		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.EXTEND_BOOKING, Constants.REQUEST),
+				new ExtendBookingReqBody(bookingID, offset));
 		
 		return requestMessage;
 	}
