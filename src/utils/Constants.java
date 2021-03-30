@@ -3,6 +3,8 @@
  */
 package utils;
 
+import java.util.UUID;
+
 /**
  * @author c170011
  *
@@ -13,5 +15,10 @@ public final class Constants {
 	public final static int QUERY_AVAILABILITY = 0;
 	public final static int MAKE_BOOKING = 1;
 	public final static int AMEND_BOOKING = 2;
-	public final static int MONITOR_AVAILABILITY = 4;
+	public final static int MONITOR_AVAILABILITY = 3;
+	public final static int CANCEL_BOOKING = 4;
+	public final static int EXTEND_BOOKING = 5;
+	public final static int QUERY_FACILITY_TYPES = 6;
+	public final static int QUERY_FACILITY_IDS = 7;
+	public final static UUID INVALID_UUID = new UUID(0, 0);
 }

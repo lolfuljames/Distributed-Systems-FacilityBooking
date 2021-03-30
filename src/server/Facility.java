@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
  */
 public class Facility {
 
-	private String name;
+	private String type;
 	private String facilityID;
 	private Time earliestTime;
 	private Time latestTime;
@@ -23,9 +23,9 @@ public class Facility {
 	/**
 	 * 
 	 */
-	public Facility(String name, String facilityID, Time earliestTime, Time latestTime) {
+	public Facility(String type, String facilityID, Time earliestTime, Time latestTime) {
 		// TODO Auto-generated constructor stub
-		this.name = name;
+		this.type = type;
 		this.facilityID = facilityID;
 		this.earliestTime = earliestTime;
 		this.latestTime = latestTime;
@@ -35,8 +35,8 @@ public class Facility {
 		});
 	}
 
-	public String getName() {
-		return this.name;
+	public String getType() {
+		return this.type;
 	}
 
 	public String getFacilityID() {
@@ -113,9 +113,17 @@ public class Facility {
 		int firstBookingIdx = 0;
 		int lastBookingIdx = bookings.size() - 1;
 		if (bookings.get(firstBookingIdx) == booking) {
-			firstBookingIdx += 1;
+			if (bookings.size() < 2) {
+				return true;
+			} else {
+				firstBookingIdx += 1;
+			}
 		} else if (bookings.get(lastBookingIdx) == booking) {
-			lastBookingIdx -= 1;
+			if (bookings.size() < 2) {
+				return true;
+			} else {
+				lastBookingIdx -= 1;
+			}
 		}
 		if (booking.getEndTime().compareTo(bookings.get(firstBookingIdx).getStartTime()) <= 0) {
 			return true;
@@ -231,5 +239,8 @@ public class Facility {
 		return statusCode;
 	}
 
+	public void cancelBooking(Booking booking) {
+		this.bookings.get(booking.getDay()).remove(booking);
+	}
 
 }

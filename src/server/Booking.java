@@ -12,7 +12,7 @@ import java.util.UUID;
 public class Booking {
 	
 	private UUID uuid;
-	private String facilityName;
+	private String facilityType;
 	private String facilityID;
 	private Day day;
 	private TimePeriod timePeriod;
@@ -20,7 +20,7 @@ public class Booking {
 	/**
 	 * 
 	 */
-	public Booking(String facilityName, String facilityID, Day day, Time startTime, Time endTime) throws BookingFailedException {
+	public Booking(String facilityType, String facilityID, Day day, Time startTime, Time endTime) throws BookingFailedException {
 
 		// Allow single day booking only
 		if (startTime.compareTo(endTime) > 0) {
@@ -31,7 +31,7 @@ public class Booking {
 		}
 		
 		this.uuid = UUID.randomUUID();
-		this.facilityName = facilityName;
+		this.facilityType = facilityType;
 		this.facilityID = facilityID;
 		this.day = day;
 		this.timePeriod = new TimePeriod(startTime, endTime);
@@ -41,8 +41,8 @@ public class Booking {
 		return this.uuid;
 	}
 	
-	public String getFacilityName() {
-		return this.facilityName;
+	public String getFacilityType() {
+		return this.facilityType;
 	}
 	
 	public String getFacilityID() {

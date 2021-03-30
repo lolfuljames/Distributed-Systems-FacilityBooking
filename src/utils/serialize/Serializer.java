@@ -204,7 +204,7 @@ public class Serializer {
 		System.out.println(Deserializer.deserialize(buf, new ArrayList<String>() {}));
 
 		System.out.print("Testing ReqBody serialization and deserialization: ");
-		Message message = new Message(new Header(UUID.randomUUID(), 0, 0), new QueryAvailabilityReqBody(days, "LT"));
+		Message message = new Message(new Header(UUID.randomUUID(), 0, 0), new QueryAvailabilityReqBody(days, "LT-1", "LT", true));
 		try {
 			buf = Serializer.serialize(message, buf);
 		} catch (IllegalArgumentException e) {
@@ -216,7 +216,7 @@ public class Serializer {
 		}
 		Message outMessage = Deserializer.deserialize(buf, message.getClass());
 		QueryAvailabilityReqBody temp = (QueryAvailabilityReqBody) outMessage.getBody();
-		System.out.println(temp.facilityName);
+		System.out.println(temp.facilityID);
 		for(Day day: temp.days) {
 			System.out.println(day);
 		}

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.io.*;
 import server.*;
+import utils.Constants;
 import utils.message.Body;
 import utils.message.Message;
 import utils.message.request.*;
@@ -155,7 +156,10 @@ public class Deserializer {
 			return (Object) readEnum(clazz, buffer);
 		} else if (clazz == InetAddress.class) {
 			return (Object) readInetAddress(clazz, buffer);
-		} else {
+		} else if (clazz == Boolean.class || clazz == Boolean.TYPE) {
+			return (Object) readBool(buffer);
+		}
+		else {
 			Object obj = clazz.newInstance();
 
 			for (Field field : clazz.getDeclaredFields()) {
@@ -222,9 +226,15 @@ public class Deserializer {
 			field.set(obj, readString(buffer));
 		} else if (type == Enum.class) {
 			field.set(obj, readEnum(((Class<?>) type), buffer));
+		} else if (type == Boolean.class){
+			field.set(obj,  readBool(buffer));
 		} else {
 			field.set(obj, read(field.getType(), buffer));
 		}
+	}
+	
+	public static Boolean readBool(ByteBuffer buffer) {
+		return buffer.get() == 1 ? true: false;
 	}
 	
 	/*
@@ -248,39 +258,57 @@ public class Deserializer {
 		Object respBody = null;
 		if(messageType == 0) {
 			switch(opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 				reqBody = read(QueryAvailabilityReqBody.class, buffer);
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 				reqBody = read(MakeBookingReqBody.class, buffer);
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 				reqBody = read(AmendBookingReqBody.class, buffer);
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				reqBody = read(MonitorAvailabilityReqBody.class, buffer);
 				break;
-			case 4:
+			case Constants.EXTEND_BOOKING:
 				reqBody = read(ExtendBookingReqBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_TYPES:
+				reqBody = read(QueryFacilityTypesReqBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_IDS:
+				reqBody = read(QueryFacilityIDsReqBody.class, buffer);
+				break;
+			case Constants.CANCEL_BOOKING:
+				reqBody = read(CancelBookingReqBody.class, buffer);
 				break;
 			}
 			return reqBody;
 		} else {
 			switch(opCode) {
-			case 0:
+			case Constants.QUERY_AVAILABILITY:
 				respBody = read(QueryAvailabilityRespBody.class, buffer);
 				break;
-			case 1:
+			case Constants.MAKE_BOOKING:
 				respBody = read(MakeBookingRespBody.class, buffer);
 				break;
-			case 2:
+			case Constants.AMEND_BOOKING:
 				respBody = read(AmendBookingRespBody.class, buffer);
 				break;
-			case 3:
+			case Constants.MONITOR_AVAILABILITY:
 				respBody = read(MonitorAvailabilityRespBody.class, buffer);
 				break;
-			case 4:
+			case Constants.EXTEND_BOOKING:
 				respBody = read(ExtendBookingRespBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_TYPES:
+				respBody = read(QueryFacilityTypesRespBody.class, buffer);
+				break;
+			case Constants.QUERY_FACILITY_IDS:
+				respBody = read(QueryFacilityIDsRespBody.class, buffer);
+				break;
+			case Constants.CANCEL_BOOKING:
+				respBody = read(CancelBookingRespBody.class, buffer);
 				break;
 			}
 			return respBody;
@@ -296,7 +324,8 @@ public class Deserializer {
 		byte[] byteString = new byte[length];
 
 		buffer.get(byteString, 0, length);
-		return new String(byteString, StandardCharsets.UTF_8);
+		String outputString = new String(byteString, StandardCharsets.UTF_8);
+		return outputString;
 	}
 
 	public static Enum<?> readEnum(Class<?> clazz, ByteBuffer buffer) {
