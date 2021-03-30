@@ -311,7 +311,7 @@ public class Server implements CallbackServer {
 			System.out.println("Notifying callback of unknown facility.. This error should never happen..");
 			return;
 		}
-		message += String.format("Availability for %s:\n", facility.getType());
+		message += String.format("Availability for %s:\n", facility.getFacilityID());
 		message += _convertIDTimingsToString(availableTiming);
 		
 		final String callbackMessage = message;
@@ -524,7 +524,7 @@ public class Server implements CallbackServer {
 	private String _convertIDTimingsToString(LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming) {
 		String res = "";
 		for (Entry<Day, ArrayList<TimePeriod>> entry : availableTiming.entrySet()) {
-			res += String.format("%s: ", entry.getKey());
+			res += String.format("%s: \n", entry.getKey());
 			for (TimePeriod timePeriod : entry.getValue()) {
 				res += String.format(" %s - %s |",
 						timePeriod.getStartTime().toString(), timePeriod.getEndTime().toString());
