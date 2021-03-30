@@ -587,7 +587,7 @@ public class Server implements CallbackServer {
 	 */
 	private UUID makeBooking(String facilityType, String facilityID, Day day, Time startTime, Time endTime)
 			throws UnknownFacilityException, BookingFailedException {
-		if (!this.facilities.containsKey(facilityType)) {
+		if (!this.facilities.containsKey(facilityType) || !this.facilities.get(facilityType).containsKey(facilityID)) {
 			throw new UnknownFacilityException();
 		}
 		UUID uuid = Constants.INVALID_UUID;

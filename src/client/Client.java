@@ -112,7 +112,12 @@ public class Client {
 					try {
 						this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 						Message responseMessage = this.receiveMessage();
-						System.out.println(responseMessage);
+						RespBody respBody = (RespBody) responseMessage.getBody();
+						if (respBody.getErrorMessage() != null) {
+							System.out.println(respBody.getErrorMessage());
+						} else {
+							System.out.println(respBody.getPayload());
+						}
 						break;
 					} catch (IOException ex) {
 						System.out.println("Request transmission failed, resending...");
