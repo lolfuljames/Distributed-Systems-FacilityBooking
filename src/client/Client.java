@@ -120,7 +120,7 @@ public class Client {
 		}
 		menu(args);
 		
-		String facilityName = scanner.nextLine().toUpperCase();
+		String facilityType = scanner.nextLine().toUpperCase();
 		args.clear();
 		args.add("Please enter the day of interest.");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -133,7 +133,7 @@ public class Client {
 		ArrayList<Day> days = new ArrayList<Day>();
 		days.add(selectedDay);
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.QUERY_AVAILABILITY, Constants.REQUEST),
-				new QueryAvailabilityReqBody(days, facilityName));
+				new QueryAvailabilityReqBody(days, facilityType));
 		this.sendMessage(requestMessage, this.serverAddress, this.serverPort);
 		Message responseMessage = this.receiveMessage();
 		QueryAvailabilityRespBody respBody = (QueryAvailabilityRespBody) responseMessage.getBody();
