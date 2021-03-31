@@ -50,8 +50,11 @@ public class Serializer {
 	 * @throws IllegalAccessException
 	 */
 	public static void write(Object obj, ByteBuffer buffer) throws IllegalArgumentException, IllegalAccessException {
-
-
+		/*
+		 * Recursively write for Non-Generic Class and ArrayList<Integer> (1D) Note that
+		 * our method does not handle the case where there's cycle, one could possibly
+		 * use a DFS with visited to keep track whether there's a cycle
+		 */
 		if (obj instanceof String) {
 			byte[] byteString = ((String) obj).getBytes(StandardCharsets.UTF_8);
 			buffer.putInt(byteString.length); // record the length to recover the string
