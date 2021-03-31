@@ -898,7 +898,7 @@ public class Server implements CallbackServer {
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
 		Double currentLoss = rand.nextDouble();
-//		System.out.println("Loss: " + currentLoss);
+		System.out.println(String.format("Loss: %.3f, Threshold: %.3f | Send: %b", currentLoss, Constants.PACKET_LOSS_THRESHOLD_SERVER, currentLoss > Constants.PACKET_LOSS_THRESHOLD_SERVER));
 		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD_SERVER) socket.send(response);
 	}
 

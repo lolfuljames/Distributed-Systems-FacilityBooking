@@ -599,7 +599,7 @@ public class Client {
 		buf = Serializer.serialize(message, buf);
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
 		Double currentLoss = rand.nextDouble();
-//		System.out.println("Loss: " + currentLoss);
+		System.out.println(String.format("Loss: %.3f, Threshold: %.3f | Send: %b", currentLoss, Constants.PACKET_LOSS_THRESHOLD_CLIENT, currentLoss > Constants.PACKET_LOSS_THRESHOLD_CLIENT));
 		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD_CLIENT) socket.send(response);
 	}
 
