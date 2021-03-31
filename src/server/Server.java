@@ -96,6 +96,7 @@ public class Server implements CallbackServer {
 			InetAddress clientAddr = request.getAddress();
 			int clientPort = request.getPort();
 			
+			System.out.println(requestMessage);
 //			duplicated client request detected
 			if (this.semanticMode == 0 && messageCache.containsKey(messageID)) {
 				Message cachedMessage = messageCache.get(messageID).getMessage();
@@ -159,11 +160,7 @@ public class Server implements CallbackServer {
 
 	/**
 	 * 
-	 * For every 10 seconds, clears cache for expired messages
-	 * 
-	 */
-	/**
-	 * 
+	 * For at least  10 seconds, clears cache for expired messages
 	 */
 	private void updateCacheTTL() {
 		long current_time = Instant.now().getEpochSecond();
@@ -224,8 +221,9 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * @param reqBody
-	 * @return
+	 * Handler for amend booking
+	 * @param reqBody, body of request message
+	 * @return 
 	 */
 	public RespBody handleAmendBooking(AmendBookingReqBody reqBody) {
 		UUID bookingID = reqBody.getBookingID();
@@ -250,8 +248,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @param reqBody
-	 * @return
+	 * Handler to extend booking
+	 * @param reqBody - body of request message
+	 * @return respBody - body of response message
 	 */
 	public RespBody handleExtendBooking(ExtendBookingReqBody reqBody) {
 		UUID bookingID = reqBody.getBookingID();
@@ -276,9 +275,10 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @param bookingID
-	 * @param offset
-	 * @return
+	 * Extends existing booking of bookingID by offset
+	 * @param bookingID - bookingID of extended booking
+	 * @param offset - positive only, extends timeslot's end timing by offset minutes.
+	 * @return statusCode - 0 if successful
 	 */
 	private int extendBooking(UUID bookingID, int offset) {
 		// TODO Auto-generated method stub
@@ -363,8 +363,9 @@ public class Server implements CallbackServer {
 			sendMessage(respMessage, callback.getAddress(), callback.getPort());
 			try {
 				ackMessage = receiveMessage();
+				if (ackMessage.header.getOpCode() != Constants.MONITOR_AVAILABILITY) continue;
 				data = ((MonitorAvailabilityRespBody) ackMessage.getBody()).getPayload();
-				if (data.equals("ACK_CALLBACK")) break;
+				if (data.equals(Constants.ACK_CALLBACK)) break;
 			} catch (IOException ex) {
 				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
 			}
@@ -373,7 +374,8 @@ public class Server implements CallbackServer {
 	};
 
 	/**
-	 * Handler for sending messages to all clients.
+	 * Handler for sending messages to all clients. Prepares messages to be sent over 
+	 * to call clients.
 	 * 
 	 * @param facility - Facility that was updated that caused the notification.
 	 */
@@ -467,10 +469,11 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @param facilityID
-	 * @param days
-	 * @return
-	 * @throws UnknownFacilityException
+	 * Checks for availability of a facility
+	 * @param facilityID - ID of the facility
+	 * @param days - ArrayList of days interested
+	 * @return availableTimings - Map of day -> timing
+	 * @throws UnknownFacilityException- Non-existing facility name.
 	 */
 	private LinkedHashMap<Day, ArrayList<TimePeriod>> queryAvailabilityIDBased(String facilityID,
 			ArrayList<Day> days) throws UnknownFacilityException {
@@ -497,8 +500,9 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * @param reqBody
-	 * @return
+	 * handler for make booking operation.
+	 * @param reqBody - body of request message.
+	 * @return respBody - body of response message.
 	 */
 	private RespBody handleMakeBooking(MakeBookingReqBody reqBody) {
 		String facilityID = reqBody.getFacilityID();
@@ -522,8 +526,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @param reqBody
-	 * @return
+	 * handler for cancel booking operation.
+	 * @param reqBody - body of request message.
+	 * @return respBody - body of response message.
 	 */
 	private RespBody handleCancelBooking(CancelBookingReqBody reqBody) {
 		UUID bookingID = reqBody.getBookingID();
@@ -540,8 +545,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @param bookingID
-	 * @return
+	 * cancels existing booking 
+	 * @param bookingID - bookingID of booking to be cancelled
+	 * @return success - true/false
 	 */
 	private boolean cancelBooking(UUID bookingID) {
 		if (!this.bookings.containsKey(bookingID)) {
@@ -557,7 +563,8 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * @return
+	 * Handler for querying supported facility types
+	 * @return respBody - body of response message
 	 */
 	private RespBody handleQueryFacilityTypes() {
 		ArrayList<String> facilityTypes = this.getFacilityTypes();
@@ -566,8 +573,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
+	 * Handler for querying supported facility IDs
 	 * @param reqBody
-	 * @return
+	 * @return respBody - body of response message
 	 */
 	private RespBody handleQueryFacilityIDs(QueryFacilityIDsReqBody reqBody) {
 		ArrayList<String> facilityTypes = new ArrayList<String>();
@@ -584,8 +592,9 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * @param reqBody
-	 * @return
+	 * Handler for query availability operation
+	 * @param reqBody - body of request message
+	 * @return respBody - body of response message
 	 */
 	private RespBody handleQueryAvailability(QueryAvailabilityReqBody reqBody) {
 		ArrayList<Day> days = reqBody.getDays();
@@ -619,8 +628,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
+	 * Helper for converting type-based query timings to formatted string output
 	 * @param availableTiming
-	 * @return
+	 * @return res - formatted string output for timings.
 	 */
 	private String _convertTimingsToString(LinkedHashMap<Day, LinkedHashMap<String, ArrayList<TimePeriod>>> availableTiming) {
 		String res = "";
@@ -639,8 +649,9 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
+	 * Helper for converting ID-based query timings to formatted string output.
 	 * @param availableTiming
-	 * @return
+	 * @return res - formatted string output for timings
 	 */
 	private String _convertIDTimingsToString(LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming) {
 		String res = "";
@@ -697,11 +708,6 @@ public class Server implements CallbackServer {
 	 *         acceptable, only amendment within the operating hours of the facility
 	 *         is accepted) 4 -> Booking does not exist
 	 */
-	/**
-	 * @param bookingID
-	 * @param offset
-	 * @return
-	 */
 	private int amendBooking(UUID bookingID, int offset) {
 		if (!this.bookings.containsKey(bookingID)) {
 			return 4;
@@ -717,7 +723,8 @@ public class Server implements CallbackServer {
 	}
 	
 	/**
-	 * @return
+	 * gets all facilityTypes supported by the system.
+	 * @return ArrayList<String> facilityTypes - arraylist of facilityType
 	 */
 	private ArrayList<String> getFacilityTypes() {
 		ArrayList<String> facilityTypes = new ArrayList<String>();
@@ -728,8 +735,9 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * @param facilityName
-	 * @return
+	 * gets facilityIDs of facilities belonging to facilityType
+	 * @param facilityType
+	 * @return ArrayList<String> facilityIDs - arraylist of IDs
 	 * @throws UnknownFacilityException
 	 */
 	private ArrayList<String> getFacilityIDs(String facilityType) throws UnknownFacilityException {
@@ -744,7 +752,7 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * A method to generate facilities.
+	 * A method to populate facilities.
 	 * 
 	 * @return facilities - Generated facilities. { Facility Type 1 : { facility #1:
 	 *         Facility }, Facility Type 2 : { facility #1: Facility } }
@@ -758,9 +766,9 @@ public class Server implements CallbackServer {
 			for (int i = 1; i < 6; i++) {
 				facilities.get("LT").put(String.format("LT-%d", i),
 						new Facility("LT", String.format("LT-%d", i), new Time(8, 0), new Time(17, 0)));
-				facilities.get("TR").put(String.format("LT-%d", i),
+				facilities.get("TR").put(String.format("TR-%d", i),
 						new Facility("TR", String.format("TR-%d", i), new Time(8, 0), new Time(17, 0)));
-				facilities.get("LAB").put(String.format("LT-%d", i),
+				facilities.get("LAB").put(String.format("LAB-%d", i),
 						new Facility("LAB", String.format("LAB-%d", i), new Time(8, 0), new Time(17, 0)));
 			}
 		} catch (TimeErrorException e) {
@@ -794,14 +802,6 @@ public class Server implements CallbackServer {
 	}
 
 	private String res = "";
-
-//	private void testCallback(DatagramPacket request) throws ClassNotFoundException, IOException {
-//	    handleCallback(request);
-//	    while (callbacks.size() > 0) {
-//		    updateMonitorInterval();
-//		    notifyAllCallbacks("Received with thanks");
-//	    }
-//	}
 
 	private void testQueryAvailability() {
 		ArrayList<Day> days = new ArrayList<Day>();
@@ -846,14 +846,8 @@ public class Server implements CallbackServer {
 			System.out.println(uuid); // Expected output: null (No available time slot test case)
 			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(10, 59), new Time(12, 0));
 			System.out.println(uuid); // Expected output: null (No available time slot test case)
-			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(17, 01), new Time(18, 0)); // Expected
-																											// output:
-																											// Exception
-																											// thrown
-																											// (Non-operating
-																											// hours
-																											// test
-																											// case)
+			uuid = this.makeBooking(facilityType, "LT-1", Day.MONDAY, new Time(17, 01), new Time(18, 0)); 
+			// Expected output: Exception thrown (Non-operating hours test case)
 			this.testQueryAvailability();
 		} catch (TimeErrorException e) {
 			System.out.println(String.format("The time given is not a valid time (in 24-hour format)."));
@@ -891,7 +885,7 @@ public class Server implements CallbackServer {
 
 	/**
 	 * 
-	 * Used as a 
+	 * Used as a generic way to send messages
 	 * @param message
 	 * @param clientAddr
 	 * @param clientPort
@@ -909,7 +903,7 @@ public class Server implements CallbackServer {
 	}
 
 	/**
-	 * Used as a genetic way to handle received packets,
+	 * Used as a generic way to handle received packets,
 	 * @return 
 	 * @throws IOException
 	 */

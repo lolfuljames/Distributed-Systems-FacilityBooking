@@ -196,8 +196,12 @@ public class Facility {
 				amendable = this.isBookable(booking);
 			}
 		} catch (TimeErrorException e) {
+			booking.setStartTime(originalStartTime);
+			booking.setEndTime(originalEndTime);
 			return 2;
 		} catch (BookingFailedException e) {
+			booking.setStartTime(originalStartTime);
+			booking.setEndTime(originalEndTime);
 			return 3;
 		}
 		
@@ -225,8 +229,12 @@ public class Facility {
 			booking.setEndTime(amendedEndTime);
 			amendable = this.isBookable(booking);
 		} catch (TimeErrorException e) {
+			booking.setStartTime(originalStartTime);
+			booking.setEndTime(originalEndTime);
 			return 2;
 		} catch (BookingFailedException e) {
+			booking.setStartTime(originalStartTime);
+			booking.setEndTime(originalEndTime);
 			return 3;
 		}
 		if (!amendable) {

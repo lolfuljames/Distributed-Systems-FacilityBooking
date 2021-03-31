@@ -39,7 +39,6 @@ public class Serializer {
 		 * our method does not handle the case where there's cycle, one could possibly
 		 * use a DFS with visited to keep track whether there's a cycle
 		 */
-//		System.out.println("Serializing " + obj.getClass());
 		if (obj instanceof String) {
 			byte[] byteString = ((String) obj).getBytes(StandardCharsets.UTF_8);
 			buffer.putInt(byteString.length); // record the length to recover the string
