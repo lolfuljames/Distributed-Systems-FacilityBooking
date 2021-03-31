@@ -19,8 +19,19 @@ public class AmendBookingRespBody extends RespBody {
 		return this.errorMessage;
 	}
 	
-	public Object getPayload() {
+	public UUID getBookingID() {
 		return this.bookingID;
+	}
+	
+	public Object getPayload() {
+		String str = "";
+		if (!this.getErrorMessage().equals("")) {
+			str += String.format("Booking amendment failed! %s\n", this.getErrorMessage());
+		} else {
+			str += "Booking amended successfully.\n";
+			str += String.format("Booking ID: %s\n", this.getBookingID().toString());
+		}
+		return str;
 	}
 	
 	public String toString() {

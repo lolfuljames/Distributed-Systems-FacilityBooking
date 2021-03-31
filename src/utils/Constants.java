@@ -22,6 +22,9 @@ public final class Constants {
 	public final static int QUERY_FACILITY_IDS = 7;
 	public final static UUID INVALID_UUID = new UUID(0, 0);
 	public final static int TIMEOUT_MS = 1000;
+	public final static int TIMEOUT_MS_CALLBACK = 100;
 	public final static int SERVER_DEFAULT_TIMEOUT_MS = 7 * 24 * 60 * 1000;
-	public final static double PACKET_LOSS_THRESHOLD = 0.7;
+	public final static double PACKET_LOSS_THRESHOLD_SERVER = 0.5;
+	public final static double PACKET_LOSS_THRESHOLD_CLIENT = 0;
+	public final static String ACK_CALLBACK = "ACK_CALLBACK";
 }
