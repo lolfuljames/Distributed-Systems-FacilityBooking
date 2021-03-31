@@ -353,13 +353,15 @@ public class Server implements CallbackServer {
 		Message respMessage;
 		Message ackMessage;
 		String data;
+		int retryCount = 0;
 
 		message = message + "\nMonitoring will end in " + callback.getMonitorInterval() + " minutes. ";
 		respBody = new MonitorAvailabilityRespBody("", message);
 		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
 		this.socket.setSoTimeout(Constants.TIMEOUT_MS_CALLBACK);
-		while (true) {
+		while (retryCount < Constants.MAX_RETRIES) {
+			retryCount += 1;
 			sendMessage(respMessage, callback.getAddress(), callback.getPort());
 			try {
 				ackMessage = receiveMessage();

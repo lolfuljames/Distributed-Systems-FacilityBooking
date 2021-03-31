@@ -27,4 +27,5 @@ public final class Constants {
 	public final static double PACKET_LOSS_THRESHOLD_SERVER = 0.5;
 	public final static double PACKET_LOSS_THRESHOLD_CLIENT = 0.5;
 	public final static String ACK_CALLBACK = "ACK_CALLBACK";
+	public final static int MAX_RETRIES = 100;
 }
