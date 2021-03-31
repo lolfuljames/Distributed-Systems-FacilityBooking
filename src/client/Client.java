@@ -526,6 +526,8 @@ public class Client {
 			try {
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
+
+				// resend until client receives acknowledgment of callback registration
 				if (data.equals(Constants.ACK_CALLBACK)) break;
 			} catch (IOException ex) {
 				System.out.println("ACK_CALLBACK not received! Requesting again...");
@@ -536,12 +538,16 @@ public class Client {
 		console(String.format("Registration for callback is successful! Facility monitored: %s", callback.getMonitorFacilityID()));
 		try {
 			while (true) {
-//				set to timeout until callback ends
+				// set to timeout until callback ends
 				System.out.println("Monitoring....");
 				socket.setSoTimeout((int) ((callbackEndTime - Instant.now().getEpochSecond()) * 1000));
+				
+				// receive notification
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
 				System.out.println(data);
+				
+				// send acknowledgment of notification
 				header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 				body = new MonitorAvailabilityRespBody("", Constants.ACK_CALLBACK);
 				responseMessage = new Message(header,body);
