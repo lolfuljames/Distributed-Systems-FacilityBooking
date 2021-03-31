@@ -216,6 +216,9 @@ public class Client {
 		int offset = scanInteger();
 		if (offset == Integer.MAX_VALUE) {
 			return null;
+		} else if (offset < 0) {
+			System.out.println("Invalid duration entered!");
+			return null;
 		}
 
 		Message requestMessage = new Message(new Header(UUID.randomUUID(), Constants.EXTEND_BOOKING, Constants.REQUEST),
