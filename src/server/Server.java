@@ -214,7 +214,7 @@ public class Server implements CallbackServer {
 	 */
 	public RespBody handleCallback(MonitorAvailabilityReqBody reqBody)
 			throws IOException {
-		String payload = "ACK_CALLBACK";
+		String payload = Constants.ACK_CALLBACK;
 		String errorMessage = "";
 		MonitorCallback newCallback = (MonitorCallback) reqBody.getMonitorCallback();
 		addCallback(newCallback);
@@ -300,15 +300,28 @@ public class Server implements CallbackServer {
 
 	/**
 	 * 
-	 * Handler to add callback to registered list
+	 * Handler to add callback to registered list,
+	 * checks for duplicate callbacks, if new callback has a
+	 * larger monitor interval, change its monitor interval.
 	 * 
 	 * @param callback - MonitorCallback object sent from client.
 	 */
 	/**
 	 *
 	 */
-	public void addCallback(MonitorCallback callback) {
-		callbacks.add(callback);
+	public void addCallback(MonitorCallback newCallback) {
+		
+		for (MonitorCallback callback : callbacks) {
+			// possible duplicate callback received
+			if (callback.getAddress().equals(newCallback.getAddress()) && 
+					(callback.getPort() == newCallback.getPort()) && 
+					callback.getMonitorFacilityID() == callback.getMonitorFacilityID()) {
+				callback.setMonitorInterval(Math.max(newCallback.getMonitorInterval(), callback.getMonitorInterval()));
+				return;
+			}
+		}
+		
+		callbacks.add(newCallback);
 	}
 
 	/**
@@ -341,11 +354,11 @@ public class Server implements CallbackServer {
 		Message ackMessage;
 		String data;
 
-		message = message + "\n Monitoring will end in " + callback.getMonitorInterval() + " minutes. ";
+		message = message + "\nMonitoring will end in " + callback.getMonitorInterval() + " minutes. ";
 		respBody = new MonitorAvailabilityRespBody("", message);
 		header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
 		respMessage = new Message(header, respBody);
-		this.socket.setSoTimeout(Constants.TIMEOUT_MS);
+		this.socket.setSoTimeout(Constants.TIMEOUT_MS_CALLBACK);
 		while (true) {
 			sendMessage(respMessage, callback.getAddress(), callback.getPort());
 			try {
@@ -539,6 +552,7 @@ public class Server implements CallbackServer {
 		this.bookings.remove(bookingID);
 		Facility facility = this.facilities.get(booking.getFacilityType()).get(booking.getFacilityID());
 		facility.cancelBooking(booking);
+		notifyAllCallbacks(facility);
 		return true;
 	}
 
@@ -667,7 +681,7 @@ public class Server implements CallbackServer {
 			uuid = newBooking.getUUID();
 			this.bookings.put(uuid, newBooking);
 			notifyAllCallbacks(facility);
-		}
+		} else throw new BookingFailedException("Booking has failed! Slot is no longer available!");
 		return uuid;
 	}
 
@@ -876,6 +890,8 @@ public class Server implements CallbackServer {
 	}
 
 	/**
+	 * 
+	 * Used as a 
 	 * @param message
 	 * @param clientAddr
 	 * @param clientPort
@@ -889,11 +905,12 @@ public class Server implements CallbackServer {
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
 		Double currentLoss = rand.nextDouble();
 //		System.out.println("Loss: " + currentLoss);
-		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD_SERVER) socket.send(response);
 	}
 
 	/**
-	 * @return
+	 * Used as a genetic way to handle received packets,
+	 * @return 
 	 * @throws IOException
 	 */
 	private DatagramPacket receivePacket() throws IOException {
@@ -902,10 +919,10 @@ public class Server implements CallbackServer {
 		socket.receive(request);
 		return request;
 	}
-	
-	// to only be used when expecting a specific reply
+
 	/**
-	 * @return
+	 * to only be used when expecting a specific reply
+	 * @return Message
 	 * @throws IOException
 	 */
 	private Message receiveMessage() throws IOException {

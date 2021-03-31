@@ -86,46 +86,26 @@ public class Client {
 			switch (opCode) {
 			case Constants.QUERY_AVAILABILITY:
 		    	requestMessage = this.queryFacilityAvailability(args);
-		    	if (requestMessage == null) {
-					awaitReceiveMessage = false;
-		    	} else {
-					awaitReceiveMessage = true;
-		    	}
+		    	if (requestMessage != null) awaitReceiveMessage = true;
 				break;
 			case Constants.MAKE_BOOKING:
 		    	requestMessage = this.makeBooking(args);
-		    	if (requestMessage == null) {
-					awaitReceiveMessage = false;
-		    	} else {
-					awaitReceiveMessage = true;
-		    	}
+		    	if (requestMessage != null) awaitReceiveMessage = true;
 				break;
 			case Constants.AMEND_BOOKING:
 		    	requestMessage = this.amendBooking(args);
-		    	if (requestMessage == null) {
-					awaitReceiveMessage = false;
-		    	} else {
-					awaitReceiveMessage = true;
-		    	}
+		    	if (requestMessage != null) awaitReceiveMessage = true;
 				break;
 			case Constants.MONITOR_AVAILABILITY:
 				this.monitorFacility(args);
 				break;
 			case Constants.CANCEL_BOOKING:
 				requestMessage = this.cancelBooking(args);
-		    	if (requestMessage == null) {
-					awaitReceiveMessage = false;
-		    	} else {
-					awaitReceiveMessage = true;
-		    	}
+		    	if (requestMessage != null) awaitReceiveMessage = true;
 				break;
 			case Constants.EXTEND_BOOKING:
 		    	requestMessage = this.extendBooking(args);
-		    	if (requestMessage == null) {
-					awaitReceiveMessage = false;
-		    	} else {
-					awaitReceiveMessage = true;
-		    	}
+		    	if (requestMessage != null) awaitReceiveMessage = true;
 				break;
 			default:
 				console("Invalid action selected!");
@@ -482,23 +462,24 @@ public class Client {
 			try {
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
-				if (data.equals("ACK_CALLBACK")) break;
+				if (data.equals(Constants.ACK_CALLBACK)) break;
 			} catch (IOException ex) {
 				System.out.println("ACK_CALLBACK not received! Requesting again...");
 			}
 		}
 
 		long callbackEndTime = Instant.now().getEpochSecond() + callback.getMonitorInterval()*60;
-		
+		console(String.format("Registration for callback is successful! Facility monitored: %s", callback.getMonitorFacilityID()));
 		try {
 			while (true) {
 //				set to timeout until callback ends
+				System.out.println("Monitoring....");
 				socket.setSoTimeout((int) ((callbackEndTime - Instant.now().getEpochSecond()) * 1000));
 				responseMessage = receiveMessage();
 				data = ((MonitorAvailabilityRespBody) responseMessage.getBody()).getPayload();
 				System.out.println(data);
 				header = new Header(UUID.randomUUID(), Constants.MONITOR_AVAILABILITY, Constants.RESPONSE);
-				body = new MonitorAvailabilityRespBody(null, "ACK_CALLBACK");
+				body = new MonitorAvailabilityRespBody("", Constants.ACK_CALLBACK);
 				responseMessage = new Message(header,body);
 				sendMessage(responseMessage, serverAddress, serverPort);
 			}
@@ -536,7 +517,7 @@ public class Client {
 		DatagramPacket response = new DatagramPacket(buf.array(), buf.capacity(), clientAddr, clientPort);
 		Double currentLoss = rand.nextDouble();
 //		System.out.println("Loss: " + currentLoss);
-		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD) socket.send(response);
+		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD_CLIENT) socket.send(response);
 	}
 
 	private Message receiveMessage() throws IOException {
