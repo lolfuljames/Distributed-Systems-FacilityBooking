@@ -19,8 +19,13 @@ import utils.message.response.*;
 
 public class Serializer {
 
-	/*
-	 * Serialize by writing the fields into ByteBuffer
+	/**
+	 * Serialize the given object into the created buffer.
+	 * @param obj
+	 * @param buffer
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
 	 */
 	public static ByteBuffer serialize(Object obj, ByteBuffer buffer)
 			throws IllegalArgumentException, IllegalAccessException {
@@ -33,13 +38,20 @@ public class Serializer {
 		return buffer;
 	}
 
+	/**
+	 *
+	 * Recursively write for Non-Generic Class and ArrayList<Integer> (1D) Note that
+	 * our method does not handle the case where there's cycle or when the serialized field is null
+	 * one could possibly use a DFS with visited to keep track whether there's a cycle
+	 *
+	 * @param obj
+	 * @param buffer
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
 	public static void write(Object obj, ByteBuffer buffer) throws IllegalArgumentException, IllegalAccessException {
-		/*
-		 * Recursively write for Non-Generic Class and ArrayList<Integer> (1D) Note that
-		 * our method does not handle the case where there's cycle, one could possibly
-		 * use a DFS with visited to keep track whether there's a cycle
-		 */
-//		System.out.println("Serializing " + obj.getClass());
+
+
 		if (obj instanceof String) {
 			byte[] byteString = ((String) obj).getBytes(StandardCharsets.UTF_8);
 			buffer.putInt(byteString.length); // record the length to recover the string
@@ -60,7 +72,6 @@ public class Serializer {
 		} else if (obj instanceof InetAddress) {
 			write(((InetAddress) obj), buffer);
 		} else {
-
 			Class<?> objClass = obj.getClass();
 			Field[] fields = objClass.getDeclaredFields();
 			
@@ -77,6 +88,12 @@ public class Serializer {
 		}
 	}
 
+	/**
+	 * Overloads the write function, serializes the hostname and ip address of
+	 * the constructed InetAddress
+	 * @param obj
+	 * @param buffer
+	 */
 	public static void write(InetAddress obj, ByteBuffer buffer) {
 		String hostname = ((InetAddress) obj).getHostName();
 		byte[] address = ((InetAddress) obj).getAddress();
@@ -86,8 +103,10 @@ public class Serializer {
 		buffer.put(address);
 	}
 	
-	/*
-	 * Loop through iterable and serialize recursively.
+	/**
+	 * Loops through the object in the iterable and serialize according to their type.
+	 * @param objects
+	 * @param buffer
 	 */
 	public static void write(Iterable<?> objects, ByteBuffer buffer) {
 
@@ -105,6 +124,12 @@ public class Serializer {
 
 	}
 
+	/**
+	 * Serialize the UUID by getting the MSB and LSB.
+	 * 
+	 * @param uuid
+	 * @param buffer
+	 */
 	public static void write(UUID uuid, ByteBuffer buffer) {
 		/*
 		 * https://stackoverflow.com/questions/17893609/convert-uuid-to-byte-that-works-
