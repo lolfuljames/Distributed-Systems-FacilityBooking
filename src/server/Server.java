@@ -372,6 +372,9 @@ public class Server implements CallbackServer {
 				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
 			}
 		}
+
+		// registered client is assumed to be unreachable, remove registration for callback
+		if (retryCount >= Constants.MAX_RETRIES) this.removeCallback(callback);
 		this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
 	};
 
