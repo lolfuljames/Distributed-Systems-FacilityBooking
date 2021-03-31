@@ -42,7 +42,14 @@ public class MakeBookingRespBody extends RespBody {
 	}
 	
 	public Object getPayload() {
-		return this.bookingID;
+		String str = "";
+		if (!this.getErrorMessage().equals("")) {
+			str += String.format("Booking failed! %s\n", this.getErrorMessage());
+		} else {
+			str += "Booking made successfully.\n";
+			str += String.format("Booking ID: %s\n", this.getBookingID().toString());
+		}
+		return str;
 	}
 
 }

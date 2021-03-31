@@ -16,7 +16,13 @@ public class QueryAvailabilityRespBody extends RespBody {
 	}
 	
 	public Object getPayload() {
-		return this.payload;
+		String str = "";
+		if (!this.getErrorMessage().equals("")) {
+			str += String.format("Error! %s\n", this.getErrorMessage());
+		} else {
+			str += this.payload;
+		}
+		return str;
 	}
 	
 	public String getErrorMessage() {

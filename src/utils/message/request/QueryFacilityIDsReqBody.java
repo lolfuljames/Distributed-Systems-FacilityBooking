@@ -14,25 +14,25 @@ import utils.message.Body;
  */
 public class QueryFacilityIDsReqBody extends Body {
 	
-	public String facilityName;
+	public String facilityType;
 	
 	public QueryFacilityIDsReqBody() {
 		super();
 	}
 	
-	public QueryFacilityIDsReqBody(String facilityName) {
+	public QueryFacilityIDsReqBody(String facilityType) {
 		super();
-		this.facilityName = facilityName;
+		this.facilityType = facilityType;
 	}
 	
-	public String getFacilityName() {
-		return this.facilityName;
+	public String getFacilityType() {
+		return this.facilityType;
 	}
 
 	@Override
 	public String toString() {
 		String str = "";
-		str += String.format("Query facility IDs of %s\n", this.getFacilityName());
+		str += String.format("Query facility IDs of %s\n", this.getFacilityType());
 		return str;
 	}
 }
