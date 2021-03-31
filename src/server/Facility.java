@@ -60,9 +60,11 @@ public class Facility {
 		ArrayList<TimePeriod> availableTiming = new ArrayList<TimePeriod>();
 		ArrayList<Booking> bookings = this.bookings.get(day);
 
+		// if no existing bookings, just send whole day as available
 		if (bookings.size() < 1) {
 			availableTiming.add(new TimePeriod(this.earliestTime, this.latestTime));
 		} else {
+			// start - booking1 start || booking1 end - booking2 start || ... || booking_n end - end of day
 			TimePeriod bookedPeriod = bookings.get(0).getTimePeriod();
 			Time startTime = bookedPeriod.getStartTime();
 			if (!this.earliestTime.equals(startTime)) {
@@ -182,6 +184,7 @@ public class Facility {
 		Time amendedStartTime = null;
 		Time amendedEndTime = null;
 		try {
+			// shift timings earlier
 			if (offset < 0) {
 				amendedStartTime = booking.getStartTime().add(offset);
 				amendedEndTime = booking.getEndTime().add(offset);
@@ -189,6 +192,7 @@ public class Facility {
 				booking.setEndTime(amendedEndTime);
 				amendable = this.isBookable(booking);
 			} else {
+				// shift timings later
 				amendedStartTime = booking.getStartTime().add(offset);
 				amendedEndTime = booking.getEndTime().add(offset);
 				booking.setStartTime(amendedStartTime);

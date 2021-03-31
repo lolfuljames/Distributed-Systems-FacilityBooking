@@ -40,6 +40,8 @@ public class Client {
 	private int clientPort;
 	private static boolean DEBUG = false;
 	private Random rand = new Random();
+	
+	
 	/**
 	 * 
 	 * Initializes client's socket and enters main menu.
@@ -83,6 +85,8 @@ public class Client {
 			}
 			Message requestMessage = null;
 			ArrayList<String> args = new ArrayList<String>();
+			
+			// categorise request messages based on opcode
 			switch (opCode) {
 			case Constants.QUERY_AVAILABILITY:
 		    	requestMessage = this.queryFacilityAvailability(args);
@@ -140,6 +144,12 @@ public class Client {
 		}
 	}
 	
+	/**
+	 * Main API handler for cancel booking.
+	 * @param args - empty string arraylist.
+	 * @return requestMessage - Message object that contains cancelBookingReqBooking
+	 * @throws IllegalArgumentException
+	 */
 	private Message cancelBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
 		UUID bookingID = scanBookingID();
@@ -153,6 +163,12 @@ public class Client {
 		return requestMessage;
 	}
 
+	/**
+	 * Main API handler for amend booking
+	 * @param args - empty string arraylist.
+	 * @return requestMessage - Message object that contains amendBookingReqBooking
+	 * @throws IllegalArgumentException
+	 */
 	private Message amendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
 		UUID bookingID = scanBookingID();
@@ -183,6 +199,12 @@ public class Client {
 		return bookingID;
 	}
 
+	/**
+	 * Main API handler for client to extend existing bookings
+	 * @param args - empty string arraylist.
+	 * @return requestMessage - Message object that contains extendBookingReqBody
+	 * @throws IllegalArgumentException
+	 */
 	private Message extendBooking(ArrayList<String> args) throws IllegalArgumentException {
 		System.out.println("Please enter the booking ID.");
 		UUID bookingID = scanBookingID();
@@ -211,7 +233,19 @@ public class Client {
 		}
 	}
 
+	/**
+	 * Main API function call for clients to make booking.
+	 * Makes local function calls for queryfacilitytypes
+	 * @param args - empty string arraylist.
+	 * @return requestMessage - Message object that contains makeBookingReqBody
+	 * @throws IOException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws TimeErrorException
+	 */
 	private Message makeBooking(ArrayList<String> args) throws IOException, IllegalArgumentException, IllegalAccessException, TimeErrorException {
+		
+		//get user input for availability query
 		args.clear();
 		args.add("Please enter the day of interest.");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -231,6 +265,7 @@ public class Client {
 		days.add(selectedDay);
 		
 		ArrayList<String> facilityTypes = this.queryFacilityTypes();
+		
 		args.clear();
 		args.add("Please choose the facility of interest.");
 		for (String facilityType : facilityTypes) {
@@ -257,7 +292,8 @@ public class Client {
 				System.out.println("Request transmission failed, resending...");
 			}
 		}
-		
+
+		//get user input for booking details
 		System.out.println("Please enter the desired facility ID.");
 		String facilityID = scanner.nextLine().toUpperCase();
 		
@@ -282,7 +318,18 @@ public class Client {
 		return requestMessage;
 	}
 
+	/**
+	 * Main API Function Call for the client to query a particular facility's availability.
+	 * Calls local functions queryfacilitytype + queryfacilityID to obtain supported facilities.
+	 * @param args - empty string arraylist.
+	 * @return requestMessage - Message Object with final queryAvailabilityReqBody
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws IOException
+	 */
 	private Message queryFacilityAvailability(ArrayList<String> args) throws IllegalArgumentException, IllegalAccessException, IOException {
+		
+		// query support facility types
 		ArrayList<String> facilityTypes = this.queryFacilityTypes();
 		args.add("Please enter the facility of interest.");
 		for (String facilityType : facilityTypes) {
@@ -291,12 +338,14 @@ public class Client {
 		menu(args);
 		
 		String facilityType = scanner.nextLine().toUpperCase();
-		
+
+		// query support facility IDs
 		ArrayList<String> facilityIDs = this.queryFacilityIDs(facilityType);
 		if (facilityIDs == null) {
 			return null;
 		}
-		
+
+		// get interested facility and timing details
 		args.clear();
 		args.add("Please choose the day of interest. (Separate day by a white space if querying for multiple days)");
 		Arrays.asList(Day.values()).forEach(day -> {
@@ -331,6 +380,14 @@ public class Client {
 		
 	}
 
+	/**
+	 * local function that queries the server for supported facility IDs belonging to facilityType
+	 * @param facilityType
+	 * @return ArrayList<String> facilityIDs
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws IOException
+	 */
 	private ArrayList<String> queryFacilityIDs(String facilityType) throws IllegalArgumentException, IllegalAccessException, IOException {
 		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_IDS, Constants.REQUEST);
 		Body reqBody = new QueryFacilityIDsReqBody(facilityType);
@@ -356,6 +413,13 @@ public class Client {
 		return facilityIDs;
 	}
 
+	/**
+	 * local function that queries the server for supported facility types
+	 * @return ArrayList<String> - facility types
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws IOException
+	 */
 	private ArrayList<String> queryFacilityTypes() throws IllegalArgumentException, IllegalAccessException, IOException {
 		Header header = new Header(UUID.randomUUID(), Constants.QUERY_FACILITY_TYPES, Constants.REQUEST);
 		Body reqBody = new QueryFacilityTypesReqBody();
@@ -383,8 +447,8 @@ public class Client {
 
 	/**
 	 * 
-	 * Perform monitoring of facility, prompt users for facility input.
-	 * 
+	 * Main API for client to Perform monitoring of facility, prompt users for facility input.
+	 * @param args - empty string arraylist.
 	 * @throws IOException - Unable to reach server.
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
@@ -511,6 +575,16 @@ public class Client {
 		return socket;
 	}
 	
+	
+	/**
+	 * Used as a generic way to send messages
+	 * @param message
+	 * @param clientAddr
+	 * @param clientPort
+	 * @throws IOException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
 	private void sendMessage(Message message, InetAddress clientAddr, int clientPort) throws IOException, IllegalArgumentException, IllegalAccessException {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 		buf = Serializer.serialize(message, buf);
@@ -520,6 +594,16 @@ public class Client {
 		if (currentLoss > Constants.PACKET_LOSS_THRESHOLD_CLIENT) socket.send(response);
 	}
 
+	
+	/**
+	 * Used as a generic way to receive messages
+	 * @param message
+	 * @param clientAddr
+	 * @param clientPort
+	 * @throws IOException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
 	private Message receiveMessage() throws IOException {
 		byte[] buf = new byte[2048];
 		DatagramPacket request = new DatagramPacket(buf, buf.length);
