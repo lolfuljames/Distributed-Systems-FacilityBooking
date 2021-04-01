@@ -24,8 +24,8 @@ public final class Constants {
 	public final static int TIMEOUT_MS = 1000;
 	public final static int TIMEOUT_MS_CALLBACK = 100;
 	public final static int SERVER_DEFAULT_TIMEOUT_MS = 7 * 24 * 60 * 1000;
-	public final static double PACKET_LOSS_THRESHOLD_SERVER = 0.5;
-	public final static double PACKET_LOSS_THRESHOLD_CLIENT = 0.5;
+	public final static double PACKET_LOSS_THRESHOLD_SERVER = 0.2;
+	public final static double PACKET_LOSS_THRESHOLD_CLIENT = 0.2;
 	public final static String ACK_CALLBACK = "ACK_CALLBACK";
 	public final static int MAX_RETRIES = 100;
 }

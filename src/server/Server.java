@@ -189,6 +189,7 @@ public class Server implements CallbackServer {
 			System.out.println("Socket error: " + ex.getMessage());
 		} catch (IOException ex) {
 			System.out.println("I/O error: " + ex.getMessage());
+			ex.printStackTrace();
 		} catch (TimeErrorException ex) {
 			// TODO Auto-generated catch block\
 			System.out.println("TimeErrorException occured: " + ex.getMessage());
@@ -334,6 +335,7 @@ public class Server implements CallbackServer {
 	 *
 	 */
 	public void removeCallback(MonitorCallback callback) {
+		System.out.println(String.format("Callback by %s is dropped by the server", callback.getAddress().toString()));
 		callbacks.remove(callback);
 	}
 
@@ -347,7 +349,7 @@ public class Server implements CallbackServer {
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
 	 */
-	private void notifyCallback(MonitorCallback callback, String message) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private boolean notifyCallback(MonitorCallback callback, String message) throws IOException, IllegalArgumentException, IllegalAccessException {
 		Body respBody;
 		Header header;
 		Message respMessage;
@@ -367,15 +369,18 @@ public class Server implements CallbackServer {
 				ackMessage = receiveMessage();
 				if (ackMessage.header.getOpCode() != Constants.MONITOR_AVAILABILITY) continue;
 				data = ((MonitorAvailabilityRespBody) ackMessage.getBody()).getPayload();
-				if (data.equals(Constants.ACK_CALLBACK)) break;
+				if (data.equals(Constants.ACK_CALLBACK)) {
+					this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
+					return true;
+				}
 			} catch (IOException ex) {
 				System.out.println(String.format("ACK_CALLBACK not received from %s, Sending notification again...", callback.getAddress().toString()));
 			}
 		}
 
 		// registered client is assumed to be unreachable, remove registration for callback
-		if (retryCount >= Constants.MAX_RETRIES) this.removeCallback(callback);
 		this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
+		return false;
 	};
 
 	/**
@@ -387,6 +392,7 @@ public class Server implements CallbackServer {
 	private void notifyAllCallbacks(Facility facility) {
 		String message = "";
 		ArrayList<Day> allDays = Day.getAllDays();
+		ArrayList<MonitorCallback> unreachableCallbacks = new ArrayList<MonitorCallback>();
 		LinkedHashMap<Day, ArrayList<TimePeriod>> availableTiming;
 		try {
 			availableTiming = this.queryAvailabilityIDBased(facility.getFacilityID(), allDays);
@@ -403,7 +409,8 @@ public class Server implements CallbackServer {
 		callbacks.forEach(callback -> {
 			if (callback.getMonitorFacilityID().equals(facility.getFacilityID())) {
 				try {
-					notifyCallback(callback, callbackMessage);
+					boolean clientReachable = notifyCallback(callback, callbackMessage);
+					if (!clientReachable) unreachableCallbacks.add(callback);
 				} catch (RemoteException re) {
 					re.printStackTrace();
 				} catch (IOException e) {
@@ -418,6 +425,7 @@ public class Server implements CallbackServer {
 				}
 			}
 		});
+		unreachableCallbacks.forEach(callback -> removeCallback(callback));
 	}
 
 	/**
