@@ -71,8 +71,8 @@ public class Server implements CallbackServer {
 			return;
 		}
 		this.socket.setSoTimeout(Constants.SERVER_DEFAULT_TIMEOUT_MS);
-		System.out.println("Servicing the requests...");
 		while (true) {
+			System.out.println("Servicing the requests...");
 			DatagramPacket request = receivePacket();
 			if (semanticMode == 0) {
 				updateCacheTTL();
