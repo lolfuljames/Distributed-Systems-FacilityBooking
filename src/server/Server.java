@@ -434,20 +434,20 @@ public class Server implements CallbackServer {
 	 */
 	private void updateMonitorInterval() {
 		long current_time = Instant.now().getEpochSecond();
-		if ((current_time - this.lastUpdatedSeconds) < 10) {
+		if ((current_time - this.lastUpdatedSeconds) < 60) {
 			return;
 		}
-		this.lastUpdatedSeconds = current_time;
 		List<MonitorCallback> expiredCallbacks = new ArrayList<>();
 		callbacks.forEach(callback -> {
-			callback.setMonitorInterval(callback.getMonitorInterval() - (int)(current_time - this.lastUpdatedSeconds)/10);
-			if (callback.getMonitorInterval() == 0) {
+			callback.setMonitorInterval(callback.getMonitorInterval() - (int)(current_time - this.lastUpdatedSeconds)/60);
+			if (callback.getMonitorInterval() <= 0) {
 				expiredCallbacks.add(callback);
 			}
 		});
 		expiredCallbacks.forEach(callback -> {
 			removeCallback(callback);
 		});
+		this.lastUpdatedSeconds = current_time;
 	}
 
 	/**
